@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "235939694484",
+    "project_id": "reconfit-6a4f5",
+    "storage_bucket": "reconfit-6a4f5.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:235939694484:android:9ce0261fce164bbd83b181",
+        "android_client_info": {
+          "package_name": "com.example.reconfit"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDB4C5SpL3-brZDEpb4u7mPXl1tno0v7Xc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
