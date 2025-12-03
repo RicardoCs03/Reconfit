@@ -1,6 +1,7 @@
 package com.example.reconfit.view;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -23,7 +24,7 @@ public class HabitsFragment extends Fragment {
     private HabitsViewModel habitsViewModel;
     private RecyclerView recyclerView;
     // Debes crear un Adaptador personalizado (HabitsAdapter)
-    // private HabitsAdapter habitsAdapter; 
+    private HabitsAdapter habitsAdapter;
 
     public HabitsFragment() {
         // Constructor público vacío requerido
@@ -50,8 +51,8 @@ public class HabitsFragment extends Fragment {
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 
         // 3. Inicializar el Adaptador (PENDIENTE DE CREAR)
-        // habitsAdapter = new HabitsAdapter(new ArrayList<Habit>());
-        // recyclerView.setAdapter(habitsAdapter);
+        habitsAdapter = new HabitsAdapter();
+        recyclerView.setAdapter(habitsAdapter);
 
         // 4. Observar el LiveData
         habitsViewModel.getHabitsList().observe(getViewLifecycleOwner(), newHabitsList -> {
@@ -59,16 +60,17 @@ public class HabitsFragment extends Fragment {
 
             // Actualizar la UI:
             if (newHabitsList != null) {
-                // habitsAdapter.updateHabits(newHabitsList); // Método que crearás en el Adaptador
+                habitsAdapter.setHabits(newHabitsList); // Metodo que crearás en el Adaptador
                 // Por ahora, solo imprime para verificar la conexión
-                // Log.d("HabitsFragment", "Hábitos recibidos: " + newHabitsList.size()); 
+                Log.d("HabitsFragment", "Hábitos recibidos: " + newHabitsList.size());
             }
         });
 
         // Configurar el FloatingActionButton (fab_add_habit) para añadir un hábito
-        // view.findViewById(R.id.fab_add_habit).setOnClickListener(v -> {
-        //     // Aquí podrías abrir un diálogo para pedir el nombre del nuevo hábito
-        //     // Y luego llamar: habitsViewModel.addNewHabit(new Habit(...));
-        // });
+        view.findViewById(R.id.fab_add_habit).setOnClickListener(v -> {
+        //     Aquí podrías abrir un diálogo para pedir el nombre del nuevo hábito
+            startActivity(new android.content.Intent(getActivity(), CreateHabitActivity.class));
+        //     Y luego llamar: habitsViewModel.addNewHabit(new Habit(...));
+        });
     }
 }

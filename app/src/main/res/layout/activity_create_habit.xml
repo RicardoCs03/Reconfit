@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="24dp"
+    android:background="#F8FAFC">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Nuevo Hábito"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:textColor="#1E293B"
+        android:layout_marginBottom="24dp"/>
+
+    <!-- CAMPO 1: Nombre -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Nombre"
+        android:layout_marginBottom="8dp"/>
+
+    <EditText
+        android:id="@+id/et_habit_name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Ej. Leer libro"
+        android:background="@android:drawable/edit_text"
+        android:padding="12dp"
+        android:layout_marginBottom="16dp"/>
+
+    <!-- CAMPO 2: Descripción (NUEVO) -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Descripción (Opcional)"
+        android:layout_marginBottom="8dp"/>
+
+    <EditText
+        android:id="@+id/et_habit_description"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Ej. 10 páginas de ciencia ficción"
+        android:inputType="textMultiLine"
+        android:lines="2"
+        android:gravity="top|start"
+        android:background="@android:drawable/edit_text"
+        android:padding="12dp"
+        android:layout_marginBottom="24dp"/>
+
+    <!-- Contexto: LUGAR -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="¿Dónde?"
+        android:layout_marginBottom="8dp"/>
+
+    <RadioGroup
+        android:id="@+id/rg_place"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="24dp">
+        <RadioButton android:id="@+id/rb_home" android:text="Casa" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_weight="1"/>
+        <RadioButton android:id="@+id/rb_work" android:text="Trabajo" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_weight="1"/>
+        <RadioButton android:id="@+id/rb_any_place" android:text="Cualquiera" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_weight="1" android:checked="true"/>
+    </RadioGroup>
+
+    <!-- Contexto: MOMENTO -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="¿Cuándo?"
+        android:layout_marginBottom="8dp"/>
+
+    <RadioGroup
+        android:id="@+id/rg_time"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="32dp">
+        <RadioButton android:id="@+id/rb_morning" android:text="Mañana" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_weight="1"/>
+        <RadioButton android:id="@+id/rb_night" android:text="Noche" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_weight="1"/>
+        <RadioButton android:id="@+id/rb_any_time" android:text="Cualquiera" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_weight="1" android:checked="true"/>
+    </RadioGroup>
+
+    <Button
+        android:id="@+id/btn_save_habit"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:text="Guardar Hábito"
+        android:backgroundTint="#2563EB"/>
+
+</LinearLayout>
