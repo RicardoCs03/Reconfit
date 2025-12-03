@@ -2,6 +2,7 @@
 <com.google.android.material.card.MaterialCardView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginHorizontal="8dp"
@@ -11,42 +12,49 @@
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent"
         android:padding="16dp">
 
         <TextView
             android:id="@+id/tv_habit_name"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_width="307dp"
+            android:layout_height="26dp"
             android:text="Beber 2 litros de agua"
             android:textSize="18sp"
             android:textStyle="bold"
-            app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toStartOf="@+id/cb_habit_completed"
-            android:layout_marginEnd="8dp" />
+            app:layout_constraintTop_toTopOf="parent" />
 
         <TextView
             android:id="@+id/tv_habit_description"
-            android:layout_width="0dp"
+            android:layout_width="307dp"
             android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="2"
             android:text="Registrar el consumo de agua por la mañana y tarde."
             android:textSize="14sp"
-            android:maxLines="2"
-            android:ellipsize="end"
-            app:layout_constraintTop_toBottomOf="@id/tv_habit_name"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="@id/tv_habit_name"
-            android:layout_marginTop="4dp" />
+            app:layout_constraintTop_toBottomOf="@+id/tv_habit_name" />
+
+        <TextView
+            android:id="@+id/tv_habit_context"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Cualquiera"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/tv_habit_description"
+            app:layout_constraintVertical_bias="1.0" />
 
         <CheckBox
             android:id="@+id/cb_habit_completed"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="parent"
+            android:checked="false"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            android:checked="false" />
+            app:layout_constraintStart_toEndOf="@+id/tv_habit_description"
+            app:layout_constraintTop_toTopOf="parent" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

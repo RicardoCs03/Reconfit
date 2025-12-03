@@ -6,6 +6,7 @@ import androidx.lifecycle.MutableLiveData;
 import com.example.reconfit.model.Habit;
 import com.example.reconfit.repository.HabitRepository;
 import java.util.List;
+import com.google.firebase.firestore.Query;
 
 public class HabitsViewModel extends ViewModel {
 
@@ -26,20 +27,38 @@ public class HabitsViewModel extends ViewModel {
         return habitsList;
     }
 
-    // Método que llama al Repositorio para cargar los datos
+    // Metodo que llama al Repositorio para cargar los datos
     private void loadHabits() {
-        // Por ahora, cargaremos una lista de prueba
-        // Más adelante, este método usará el repository.getHabits() para leer de Firebase
+        // Obtenemos la colección del repositorio
+        // Ordenamos por fecha de creación (descendente) para ver los nuevos arriba
+        repository.getHabitsCollection()
+                //.orderBy("createdAt", Query.Direction.DESCENDING)
+                .addSnapshotListener((value, error) -> {
+                    if (error != null) {
+                        // Hubo un error, aquí podrías loguearlo
+                        error.printStackTrace();
+                        return;
+                    }
 
-        // Lógica de prueba:
-        // List<Habit> testList = // ... crear lista de prueba
-        // habitsList.setValue(testList); 
+                    if (value != null) {
+                        // ¡Magia! Convertimos los documentos de Firebase a objetos Java "Habit"
+                        List<Habit> habits = value.toObjects(Habit.class);
+
+                        // Guardamos los IDs de los documentos por si queremos borrar/editar luego
+                        for (int i = 0; i < habits.size(); i++) {
+                            habits.get(i).setId(value.getDocuments().get(i).getId());
+                        }
+
+                        // Actualizamos el LiveData. Esto avisará automáticamente al Fragment.
+                        habitsList.setValue(habits);
+                    }
+                });
     }
 
-    // Método de acción de usuario (ej. añadir un hábito)
+    // Metodo de acción de usuario (ej. añadir un hábito)
     public void addNewHabit(Habit newHabit) {
-        repository.addHabit(newHabit);
+        repository.saveHabit(newHabit);
         // Después de añadir, recargar o actualizar la lista de LiveData
-        // loadHabits(); 
+        loadHabits();
     }
 }

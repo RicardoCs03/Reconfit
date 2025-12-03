@@ -1,8 +1,8 @@
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
+    //alias(libs.plugins.kotlin.android)
     id("com.google.gms.google-services")
-    id("kotlin-kapt")
+    //id("kotlin-kapt")
 }
 
 android {
@@ -32,25 +32,33 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
-    kotlinOptions {
+    /*kotlinOptions {
         jvmTarget = "11"
-    }
+    }*/
 }
 
 dependencies {
+    //Firebase
     implementation(platform("com.google.firebase:firebase-bom:34.6.0"))
+    implementation("com.google.firebase:firebase-auth")
+    implementation("com.google.firebase:firebase-firestore")
     implementation("com.google.firebase:firebase-analytics")
-    implementation(libs.androidx.core.ktx)
+    // Android UI
+    //implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
     implementation(libs.firebase.firestore)
     // Dependencia principal de Lombok (Solo Compilación)
     compileOnly("org.projectlombok:lombok:1.18.30")
-    // Procesador de Anotaciones
-    // Nota: Usamos 'kapt' o 'annotationProcessor' con el formato string.
-    kapt("org.projectlombok:lombok:1.18.30")
+    // Procesador de Anotaciones para Java
+    annotationProcessor("org.projectlombok:lombok:1.18.30")
+
+    // Procesador de Anotaciones para Kotlin
+    //kapt("org.projectlombok:lombok:1.18.30")
     // (Opcional) Para pruebas
-    kaptTest("org.projectlombok:lombok:1.18.30")
+    //kaptTest("org.projectlombok:lombok:1.18.30")
+
+    // Testing
     testAnnotationProcessor("org.projectlombok:lombok:1.18.30")
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
