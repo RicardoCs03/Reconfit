@@ -11,11 +11,27 @@
         android:id="@+id/tv_home_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginTop="60dp"
         android:text="Bienvenido a ReconFit"
         android:textSize="24sp"
         android:textStyle="bold"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/tv_day_night_status"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Detectando..."
+        android:textSize="18sp"
+        android:textStyle="italic"
+        android:padding="8dp"
+        android:background="#FFC107"
+        android:textColor="@color/white"
+        android:visibility="gone"  app:layout_constraintTop_toBottomOf="@id/tv_home_title"
+        app:layout_constraintStart_toStartOf="parent"
+        android:layout_marginTop="16dp"/>
+
 
     <TextView
         android:id="@+id/tv_home_message"
