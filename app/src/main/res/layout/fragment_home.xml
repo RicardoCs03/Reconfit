@@ -28,7 +28,9 @@
         android:padding="8dp"
         android:background="#FFC107"
         android:textColor="@color/white"
-        android:visibility="gone"  app:layout_constraintTop_toBottomOf="@id/tv_home_title"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/tv_home_title"
+        app:layout_constraintBottom_toTopOf="@+id/tv_home_message"
         app:layout_constraintStart_toStartOf="parent"
         android:layout_marginTop="16dp"/>
 
@@ -40,7 +42,7 @@
         android:text="Aquí verás tu progreso diario, estadísticas resumidas de Hábitos y el estado de tus Zonas de Entrenamiento."
         android:textSize="16sp"
         android:gravity="center"
-        app:layout_constraintTop_toBottomOf="@id/tv_home_title"
+        app:layout_constraintTop_toBottomOf="@id/tv_day_night_status"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         android:layout_marginTop="32dp"/>
