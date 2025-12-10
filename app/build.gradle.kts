@@ -48,6 +48,8 @@ dependencies {
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
     implementation(libs.firebase.firestore)
+    implementation(libs.firebase.auth)
+    //óóimplementation(libs.play.services.location)
     // Dependencia principal de Lombok (Solo Compilación)
     compileOnly("org.projectlombok:lombok:1.18.30")
     // Procesador de Anotaciones para Java

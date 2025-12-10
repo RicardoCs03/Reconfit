@@ -11,17 +11,58 @@
         android:id="@+id/tv_zones_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Zonas de Enfoque"
+        android:layout_marginTop="64dp"
+        android:text="Mis Zonas de Enfoque"
         android:textSize="24sp"
         android:textStyle="bold"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/tv_zone_status"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="Estado: Obteniendo Ubicación..."
+        android:textSize="18sp"
+        android:textStyle="italic"
+        android:padding="12dp"
+        android:gravity="center"
+        android:background="#E0F7FA"
+        app:layout_constraintTop_toBottomOf="@id/tv_zones_title"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <EditText
+        android:id="@+id/et_zone_name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:hint="Nombre de la Ubicación ej. Gym"
+        app:layout_constraintTop_toBottomOf="@id/tv_zone_status"
+        app:layout_constraintBottom_toTopOf="@id/btn_save_location"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <Button
+        android:id="@+id/btn_save_location"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="Guardar Ubicación Actual como Nueva Zona"
+        app:layout_constraintTop_toBottomOf="@id/et_zone_name"
+        app:layout_constraintBottom_toTopOf="@id/rv_zones"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
 
     <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recycler_view_zones"
+        android:id="@+id/rv_zones"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_marginTop="16dp"
-        app:layout_constraintTop_toBottomOf="@id/tv_zones_title"
+        app:layout_constraintTop_toBottomOf="@id/btn_save_location"
         app:layout_constraintBottom_toBottomOf="parent"
-        tools:listitem="@android:layout/simple_list_item_1" /> </androidx.constraintlayout.widget.ConstraintLayout>
+        tools:listitem="@layout/item_zone" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

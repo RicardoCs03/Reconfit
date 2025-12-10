@@ -7,12 +7,21 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:235939694484:android:9ce0261fce164bbd83b181",
+        "mobilesdk_app_id": "1:235939694484:android:e36d5d6968a94bad83b181",
         "android_client_info": {
           "package_name": "com.example.reconfit"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "235939694484-2vv760vlfm8jpj01le0d5tsgie7k9rhc.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.reconfit",
+            "certificate_hash": "f2af13c5b6e7da2a94fd0b7ba80a1f3625e3a3a2"
+          }
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyDB4C5SpL3-brZDEpb4u7mPXl1tno0v7Xc"
