@@ -1,9 +1,12 @@
 package com.example.reconfit.view;
 
+import android.content.Intent;
 import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
+
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,7 +15,9 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.reconfit.MainActivity;
 import com.example.reconfit.R;
+import com.example.reconfit.viewmodel.AuthViewModel;
 
 public class LoginFragment extends Fragment {
 
@@ -21,6 +26,7 @@ public class LoginFragment extends Fragment {
     private EditText passwordEditText;
     private Button loginButton;
     private TextView registerTextView;
+    private AuthViewModel authViewModel;
 
     // ViewModel (se inicializará en la próxima fase)
     // private AuthViewModel authViewModel;
@@ -40,9 +46,7 @@ public class LoginFragment extends Fragment {
         passwordEditText = view.findViewById(R.id.et_password);
         loginButton = view.findViewById(R.id.btn_login);
         registerTextView = view.findViewById(R.id.tv_go_to_register);
-
-        // 2. Inicializar ViewModel (Fase 2)
-        // authViewModel = new ViewModelProvider(this).get(AuthViewModel.class);
+        authViewModel = new ViewModelProvider(this).get(AuthViewModel.class);
 
         // 3. Implementar Navegación (Ir a Registro)
         registerTextView.setOnClickListener(v -> {
@@ -56,9 +60,7 @@ public class LoginFragment extends Fragment {
         loginButton.setOnClickListener(v -> {
             attemptLogin();
         });
-
-        // 5. Observar el estado del ViewModel (Fase 2)
-        // observeAuthState();
+        observeAuthState();
     }
 
     private void attemptLogin() {
@@ -70,12 +72,33 @@ public class LoginFragment extends Fragment {
             Toast.makeText(getContext(), "Por favor, completa ambos campos.", Toast.LENGTH_SHORT).show();
             return;
         }
-
         Toast.makeText(getContext(), "Intentando iniciar sesión con: " + email, Toast.LENGTH_SHORT).show();
-
-        // Lógica de autenticación del ViewModel (Fase 2)
-        // authViewModel.signIn(email, password);
+        authViewModel.signIn(email, password);
     }
 
-    // private void observeAuthState() { ... } // Lógica de observación (Fase 2)
+    private void observeAuthState() {
+        // Observa el resultado de la operación (login)
+        authViewModel.getOperationSuccess().observe(getViewLifecycleOwner(), isSuccess -> {
+            loginButton.setEnabled(true); // Re-habilitar botón
+            if (isSuccess != null && isSuccess) {
+                // Inicio de sesión exitoso: Redirigir a la aplicación principal
+                Toast.makeText(getContext(), "¡Bienvenido! Iniciando...", Toast.LENGTH_SHORT).show();
+                // Revisa el Paso 3, esta redirección pronto cambiará.
+                Intent intent = new Intent(getActivity(), MainActivity.class);
+                startActivity(intent);
+                if (getActivity() != null) {
+                    getActivity().finish();
+                }
+            }
+        });
+        // Observa los mensajes de error
+        authViewModel.getErrorMessage().observe(getViewLifecycleOwner(), error -> {
+            if (error != null && !error.isEmpty()) {
+                loginButton.setEnabled(true); // Re-habilitar botón
+                Toast.makeText(getContext(), "Error al iniciar sesión: " + error, Toast.LENGTH_LONG).show();
+                // Llama al método de limpieza que creamos para evitar el error de 'protected access'
+                authViewModel.clearErrorState();
+            }
+        });
+    }
 }

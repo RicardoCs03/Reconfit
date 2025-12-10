@@ -18,5 +18,5 @@ public class Zone {
     private double longitude; // Longitud del centro de la zona
     private double radiusMeters; // Radio de la zona en metros
     private Timestamp creationDate; // Fecha de creación de la zona
-
+    private String userId;//Relación con el usuario que creó el hábito
 }

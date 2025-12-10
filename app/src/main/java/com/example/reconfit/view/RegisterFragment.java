@@ -1,9 +1,12 @@
 package com.example.reconfit.view;
 
+import android.content.Intent;
 import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
+
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,7 +15,9 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.reconfit.MainActivity;
 import com.example.reconfit.R;
+import com.example.reconfit.viewmodel.AuthViewModel;
 
 public class RegisterFragment extends Fragment {
 
@@ -22,9 +27,7 @@ public class RegisterFragment extends Fragment {
     private EditText confirmPasswordEditText;
     private Button registerButton;
     private TextView loginTextView;
-
-    // ViewModel (se inicializará en la Fase 2)
-    // private AuthViewModel authViewModel;
+    private AuthViewModel authViewModel;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
@@ -42,9 +45,7 @@ public class RegisterFragment extends Fragment {
         confirmPasswordEditText = view.findViewById(R.id.et_confirm_password);
         registerButton = view.findViewById(R.id.btn_register);
         loginTextView = view.findViewById(R.id.tv_go_to_login);
-
-        // 2. Inicializar ViewModel (Fase 2)
-        // authViewModel = new ViewModelProvider(this).get(AuthViewModel.class);
+        authViewModel = new ViewModelProvider(this).get(AuthViewModel.class);
 
         // 3. Implementar Navegación (Volver a Login)
         loginTextView.setOnClickListener(v -> {
@@ -80,10 +81,37 @@ public class RegisterFragment extends Fragment {
         }
 
         Toast.makeText(getContext(), "Intentando registrar usuario: " + email, Toast.LENGTH_SHORT).show();
-
-        // Lógica de autenticación del ViewModel (Fase 2)
-        // authViewModel.signUp(email, password);
+        registerButton.setEnabled(false); // Para evitar doble click
+        authViewModel.signUp(email, password);
     }
 
-    // private void observeAuthState() { ... } // Lógica de observación (Fase 2)
+    private void observeAuthState() {
+        // Observa el resultado de éxito de la operación (registro)
+        authViewModel.getOperationSuccess().observe(getViewLifecycleOwner(), isSuccess -> {
+            registerButton.setEnabled(true); // Re-habilitar botón siempre al finalizar
+            if (isSuccess != null && isSuccess) {
+                // Si es exitoso (true), el usuario está creado y logueado
+                Toast.makeText(getContext(), "¡Registro exitoso! Iniciando...", Toast.LENGTH_SHORT).show();
+                // Redirigir a MainActivity
+                Intent intent = new Intent(getActivity(), MainActivity.class);
+                startActivity(intent);
+                // Finalizar AuthActivity para evitar volver a la pantalla de login/registro
+                if (getActivity() != null) {
+                    getActivity().finish();
+                }
+            }
+        });
+
+        // Observa los mensajes de error
+        authViewModel.getErrorMessage().observe(getViewLifecycleOwner(), error -> {
+            if (error != null && !error.isEmpty()) {
+                registerButton.setEnabled(true); // Re-habilitar botón
+                // Mostrar el error de Firebase (ej: "La dirección de correo electrónico ya está en uso...")
+                Toast.makeText(getContext(), "Error de Registro: " + error, Toast.LENGTH_LONG).show();
+                // Es importante limpiar el mensaje de error en el LiveData
+                // para que no se dispare de nuevo al rotar el dispositivo, por ejemplo.
+                authViewModel.clearErrorState();
+            }
+        });
+    } // Lógica de observación (Fase 2)
 }
