@@ -17,7 +17,6 @@ public class User {
     public String lastName1;
     public String lastName2;
     public String email;
-    public String password;
     public String fecnac;
     public String genero;
     public Timestamp fecreg;

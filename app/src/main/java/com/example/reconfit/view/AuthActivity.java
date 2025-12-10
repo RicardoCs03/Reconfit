@@ -33,10 +33,13 @@ public class AuthActivity extends AppCompatActivity {
         replaceFragment(new RegisterFragment(), true);
     }
 
+    public void showCompleteProfileFragment() {
+        replaceFragment(new CompleteProfileFragment(), false);
+    }
+
     // Método utilitario centralizado para cambiar de fragmento
     private void replaceFragment(Fragment fragment, boolean addToBackStack) {
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-
         // Animaciones sutiles para una mejor experiencia de usuario
         transaction.setCustomAnimations(
                 android.R.anim.fade_in,
@@ -44,13 +47,10 @@ public class AuthActivity extends AppCompatActivity {
                 android.R.anim.fade_in,
                 android.R.anim.fade_out
         );
-
         transaction.replace(R.id.auth_fragment_container, fragment);
-
         if (addToBackStack) {
             transaction.addToBackStack(null);
         }
-
         transaction.commit();
     }
 }

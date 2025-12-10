@@ -19,7 +19,7 @@ public class Habit {
     private Timestamp createdAt;
     private int goalFrequency;
     private boolean isCompleted;
-
+    private String userId;//Relación con el usuario que creó el hábito
 }
 
 

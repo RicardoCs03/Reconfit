@@ -69,6 +69,7 @@ public class CreateHabitActivity extends AppCompatActivity {
         nuevoHabito.setContextPlace(lugar);
         nuevoHabito.setContextTime(tiempo);
         nuevoHabito.setDescription(descr);
+        nuevoHabito.setUserId(null);
 
         // Valores por defecto importantes
         nuevoHabito.setCompleted(false);

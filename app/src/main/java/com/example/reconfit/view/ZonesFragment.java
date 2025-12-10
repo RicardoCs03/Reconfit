@@ -172,7 +172,8 @@ public class ZonesFragment extends Fragment implements LocationListener, ZonesAd
                         currentLocation.getLatitude(),
                         currentLocation.getLongitude(),
                         100.0, // 100 metros de radio
-                        new Timestamp(new Date())
+                        new Timestamp(new Date()),
+                        null // El usuario actual será el creador
                 );
             }
             viewModel.saveCurrentZone(newZone);
