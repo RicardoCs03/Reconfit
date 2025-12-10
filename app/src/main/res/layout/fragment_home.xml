@@ -4,65 +4,145 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".view.HomeFragment"
-    android:padding="16dp">
+    android:padding="20dp"
+    android:background="#F5F5F5"
+    tools:context=".view.HomeFragment">
 
     <TextView
         android:id="@+id/tv_home_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="60dp"
+        android:layout_marginTop="40dp"
+        android:paddingTop="20dp"
         android:text="Bienvenido a ReconFit"
-        android:textSize="24sp"
+        android:textSize="28sp"
+        android:textColor="@color/black"
         android:textStyle="bold"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
+        android:id="@+id/tv_subtitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Tu asistente proactivo"
+        android:textSize="14sp"
+        android:textColor="#757575"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tv_home_title" />
+
+    <TextView
         android:id="@+id/tv_day_night_status"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Detectando..."
-        android:textSize="18sp"
-        android:textStyle="italic"
-        android:padding="8dp"
-        android:background="#FFC107"
+        android:layout_marginTop="16dp"
+        android:background="@drawable/ic_launcher_background"
+        android:backgroundTint="#FFC107"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="8dp"
+        android:text="Detectando ambiente..."
         android:textColor="@color/white"
+        android:textSize="14sp"
+        android:textStyle="bold"
         android:visibility="gone"
-        app:layout_constraintTop_toBottomOf="@id/tv_home_title"
-        app:layout_constraintBottom_toTopOf="@+id/tv_home_message"
         app:layout_constraintStart_toStartOf="parent"
-        android:layout_marginTop="16dp"/>
+        app:layout_constraintTop_toBottomOf="@id/tv_subtitle"
+        tools:visibility="visible"/>
 
-
-    <TextView
-        android:id="@+id/tv_home_message"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:text="Aquí verás tu progreso diario, estadísticas resumidas de Hábitos y el estado de tus Zonas de Entrenamiento."
-        android:textSize="16sp"
-        android:gravity="center"
-        app:layout_constraintTop_toBottomOf="@id/tv_day_night_status"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="32dp"/>
-
-    <LinearLayout
+    <androidx.cardview.widget.CardView
+        android:id="@+id/card_steps"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:paddingTop="16dp"
-        app:layout_constraintTop_toBottomOf="@id/tv_home_message">
+        android:layout_marginTop="24dp"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="4dp"
+        app:cardBackgroundColor="@color/white"
+        app:layout_constraintTop_toBottomOf="@id/tv_day_night_status"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
 
-        <TextView
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Dashboard de Actividad (Próximamente)"
-            android:gravity="center"
-            android:background="#E0E0E0"
-            android:padding="12dp"
-            android:layout_marginTop="20dp"/>
+            android:orientation="vertical"
+            android:padding="20dp">
 
-    </LinearLayout>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Progreso del Día"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="#333333"/>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="8dp"
+                android:gravity="center_vertical">
+
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@android:drawable/ic_menu_myplaces"
+                    app:tint="#4CAF50"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Pasos"
+                    android:layout_marginStart="8dp"
+                    android:textSize="14sp"
+                    android:textColor="#666666"/>
+
+                <View
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"/>
+
+                <TextView
+                    android:id="@+id/tv_steps_count"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="0 / 5,000"
+                    android:textStyle="bold"
+                    android:textSize="14sp"
+                    android:textColor="#333333"/>
+            </LinearLayout>
+
+            <ProgressBar
+                android:id="@+id/progress_bar_steps"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="match_parent"
+                android:layout_height="12dp"
+                android:layout_marginTop="12dp"
+                android:max="5000"
+                android:progress="0"
+                android:progressTint="#4CAF50"/>
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+    <TextView
+        android:id="@+id/tv_context_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="En Foco (Sugerencias)"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:textColor="#333333"
+        android:layout_marginTop="24dp"
+        app:layout_constraintTop_toBottomOf="@id/card_steps"
+        app:layout_constraintStart_toStartOf="parent"/>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rv_habits_focused"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="12dp"
+        app:layout_constraintTop_toBottomOf="@id/tv_context_label"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -13,6 +13,10 @@ public class HomeViewModel extends ViewModel {
         return dayNightStatus;
     }
 
+    // Definir listas para el contador de pasos
+    private MutableLiveData<Integer> steps = new MutableLiveData<>(0);
+    public LiveData<Integer> getSteps() { return steps; }
+
     // Las constantes de la lógica se mueven aquí
     private static final float LIGHT_THRESHOLD = 20.0f;
     private static final int NIGHT_START_HOUR = 20;
@@ -38,5 +42,10 @@ public class HomeViewModel extends ViewModel {
 
         // Establecer el valor, lo que notifica al Fragment
         dayNightStatus.setValue(statusKey);
+    }
+
+    //Metodo para actualizar los pasos
+    public void updateSteps(int stepCount) {
+        steps.setValue(stepCount);
     }
 }
