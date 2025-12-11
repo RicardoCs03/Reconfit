@@ -72,7 +72,7 @@ public class LoginFragment extends Fragment {
             Toast.makeText(getContext(), "Por favor, completa ambos campos.", Toast.LENGTH_SHORT).show();
             return;
         }
-        Toast.makeText(getContext(), "Intentando iniciar sesión con: " + email, Toast.LENGTH_SHORT).show();
+        //Toast.makeText(getContext(), "Intentando iniciar sesión con: " + email, Toast.LENGTH_SHORT).show();
         authViewModel.signIn(email, password);
     }
 
