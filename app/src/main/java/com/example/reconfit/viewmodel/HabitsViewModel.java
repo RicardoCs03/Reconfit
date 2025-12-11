@@ -65,4 +65,8 @@ public class HabitsViewModel extends ViewModel {
     public void deleteHabit(String habitId) {
         repository.deleteHabit(habitId);
     }
+
+    public void updateHabitStatus(String habitId, boolean isCompleted) {
+        repository.updateHabitStatus(habitId, isCompleted);
+    }
 }

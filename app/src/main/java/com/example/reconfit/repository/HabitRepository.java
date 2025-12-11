@@ -65,4 +65,16 @@ public class HabitRepository {
                 .addOnFailureListener(e -> Log.w("HabitRepository", "Error al eliminar hábito", e));
     }
 
+    // Actualizar solo el campo "completed"
+    public void updateHabitStatus(String habitId, boolean isCompleted) {
+        String userId = auth.getCurrentUser() != null ? auth.getCurrentUser().getUid() : "invitado";
+
+        db.collection("users")
+                .document(userId)
+                .collection("habits")
+                .document(habitId)
+                .update("completed", isCompleted)
+                .addOnFailureListener(e -> System.err.println("Error actualizando hábito"));
+    }
+
 }

@@ -40,8 +40,8 @@ public class HomeViewModel extends AndroidViewModel {
 
     // Las constantes de la lógica se mueven aquí
     private static final float LIGHT_THRESHOLD = 20.0f;
-    private static final int NIGHT_START_HOUR = 20;
-    private static final int NIGHT_END_HOUR = 7;
+    private static final int NIGHT_START_HOUR = 19;
+    private static final int NIGHT_END_HOUR = 5;
 
     public HomeViewModel(@NonNull Application application) {
         super(application);
@@ -153,6 +153,10 @@ public class HomeViewModel extends AndroidViewModel {
         }
     }
 
+    public void updateHabitStatus(String habitId, boolean isCompleted) {
+        habitRepository.updateHabitStatus(habitId, isCompleted);
+    }
+
     // --- LÓGICA MATEMÁTICA REAL (GPS) ---
     public void verificarUbicacionReal(double latActual, double lonActual) {
         String lugarDetectado = "Cualquiera"; // Si no estoy cerca de nada, soy libre
@@ -201,8 +205,8 @@ public class HomeViewModel extends AndroidViewModel {
             boolean matchMomento = "Cualquiera".equalsIgnoreCase(h.getContextTime()) ||
                     currentMomento.equalsIgnoreCase(h.getContextTime());
 
-            // Solo si cumple AMBAS condiciones, entra a la lista "En Foco"
-            if (matchLugar && matchMomento) {
+            // Solo si cumple las condiciones, entra a la lista "En Foco"
+            if (matchLugar && matchMomento && !h.isCompleted()) {
                 sugerencias.add(h);
             }
         }
