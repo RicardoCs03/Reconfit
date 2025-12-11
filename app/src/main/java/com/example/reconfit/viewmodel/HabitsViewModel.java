@@ -61,4 +61,8 @@ public class HabitsViewModel extends ViewModel {
         // Después de añadir, recargar o actualizar la lista de LiveData
         loadHabits();
     }
+
+    public void deleteHabit(String habitId) {
+        repository.deleteHabit(habitId);
+    }
 }

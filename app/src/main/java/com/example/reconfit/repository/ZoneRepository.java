@@ -81,6 +81,42 @@ public class ZoneRepository {
         return zonesLiveData;
     }
 
+    public LiveData<List<String>> getNombresDeZonas() {
+        MutableLiveData<List<String>> nombresData = new MutableLiveData<>();
+
+        // Si no hay usuario logueado, devolvemos lista vacía
+        if (userId == null) {
+            nombresData.setValue(new ArrayList<>());
+            return nombresData;
+        }
+
+        // Consulta a Firestore
+        db.collection("users").document(userId).collection("zones")
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    List<String> nombres = new ArrayList<>();
+                    // Agregamos los defaults siempre
+                    nombres.add("Cualquiera");
+
+                    for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
+                        String nombreZona = doc.getString("name");
+                        if (nombreZona != null && !nombres.contains(nombreZona)) {
+                            nombres.add(nombreZona);
+                        }
+                    }
+                    // ¡Aquí entregamos los datos!
+                    nombresData.setValue(nombres);
+                })
+                .addOnFailureListener(e -> {
+                    // En caso de error, devolvemos al menos los defaults
+                    List<String> defaults = new ArrayList<>();
+                    defaults.add("Cualquiera");
+                    nombresData.setValue(defaults);
+                });
+
+        return nombresData;
+    }
+
     // --- MÉTODO ADICIONAL REQUERIDO: ELIMINAR ZONA ---
     // (Necesario para el botón de eliminar que añadimos en ZonesAdapter)
     public void deleteZone(Zone zone) {

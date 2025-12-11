@@ -1,5 +1,7 @@
 package com.example.reconfit.repository;
 
+import android.util.Log;
+
 import com.example.reconfit.model.Habit;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -48,6 +50,19 @@ public class HabitRepository {
     public CollectionReference getHabitsCollection() {
         String userId = auth.getCurrentUser() != null ? auth.getCurrentUser().getUid() : "invitado";
         return db.collection("users").document(userId).collection("habits");
+    }
+
+    // Método para borrar físicamente el hábito
+    public void deleteHabit(String habitId) {
+        String userId = auth.getCurrentUser() != null ? auth.getCurrentUser().getUid() : "invitado";
+
+        db.collection("users")
+                .document(userId)
+                .collection("habits")
+                .document(habitId)
+                .delete()
+                .addOnSuccessListener(aVoid -> Log.d("HabitRepository", "Hábito eliminado"))
+                .addOnFailureListener(e -> Log.w("HabitRepository", "Error al eliminar hábito", e));
     }
 
 }

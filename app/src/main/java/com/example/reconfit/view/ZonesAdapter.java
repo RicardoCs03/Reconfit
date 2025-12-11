@@ -33,7 +33,6 @@ public class ZonesAdapter extends RecyclerView.Adapter<ZonesAdapter.ZoneViewHold
     public static class ZoneViewHolder extends RecyclerView.ViewHolder {
         TextView nameTextView;
         TextView detailsTextView;
-        ImageButton modifyButton;
         ImageButton deleteButton;
 
         public ZoneViewHolder(View itemView) {

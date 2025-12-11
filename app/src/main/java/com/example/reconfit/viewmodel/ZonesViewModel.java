@@ -24,6 +24,9 @@ public class ZonesViewModel extends ViewModel {
         return zoneStatus;
     }
 
+    public LiveData<List<String>> getNombresDeZonas() { return repository.getNombresDeZonas();
+    }
+
     public ZonesViewModel() {
         repository = new ZoneRepository();
         zonesList = repository.getAllZones();
