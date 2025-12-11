@@ -31,6 +31,8 @@ import com.google.android.gms.location.FusedLocationProviderClient;
 
 import com.example.reconfit.R;
 import com.example.reconfit.viewmodel.HomeViewModel;
+import com.google.android.gms.location.LocationCallback;
+import com.google.android.gms.location.LocationRequest;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -51,6 +53,8 @@ public class HomeFragment extends Fragment implements SensorEventListener {
     private RecyclerView rvSugerencias;
     private HabitsAdapter habitsAdapter;
     private FusedLocationProviderClient fusedLocationClient;
+    private LocationRequest locationRequest;
+    private LocationCallback locationCallback;
 
     public HomeFragment() {
         // Required empty public constructor
@@ -71,6 +75,7 @@ public class HomeFragment extends Fragment implements SensorEventListener {
         if(isSensorPresent && sensorManager != null) {
             sensorManager.registerListener(this, stepSensor, SensorManager.SENSOR_DELAY_NORMAL);
         }
+        iniciarGPS();
     }
 
     @Override
@@ -79,6 +84,7 @@ public class HomeFragment extends Fragment implements SensorEventListener {
         if (sensorManager != null) {
             sensorManager.unregisterListener(this);
         }
+        detenerGPS();
     }
 
     @Override
@@ -96,7 +102,7 @@ public class HomeFragment extends Fragment implements SensorEventListener {
         fusedLocationClient = com.google.android.gms.location.LocationServices.getFusedLocationProviderClient(requireActivity());
 
         // Llamar a la ubicación real
-        obtenerUbicacionGPS();
+        //obtenerUbicacionGPS();
 
         // Vincular vistas
         dayNightStatusTextView = view.findViewById(R.id.tv_day_night_status);
@@ -217,6 +223,36 @@ public class HomeFragment extends Fragment implements SensorEventListener {
                 habitsAdapter.notifyDataSetChanged();
             }
         });
+
+        // Configurar la petición de GPS (Qué tan rápido queremos actualizaciones)
+        locationRequest = LocationRequest.create();
+        locationRequest.setPriority(com.google.android.gms.location.LocationRequest.PRIORITY_HIGH_ACCURACY);
+        locationRequest.setInterval(10000); // Actualizar cada 10 segundos
+        locationRequest.setFastestInterval(5000); // O mínimo cada 5 segundos
+
+        // 2. Definir qué hacer cuando llega una nueva ubicación
+        locationCallback = new LocationCallback() {
+            @Override
+            public void onLocationResult(@androidx.annotation.NonNull com.google.android.gms.location.LocationResult locationResult) {
+                if (locationResult == null) {
+                    return;
+                }
+                for (android.location.Location location : locationResult.getLocations()) {
+                    if (location != null) {
+                        // ¡AQUÍ LLEGA EL DATO FRESCO!
+                        double lat = location.getLatitude();
+                        double lon = location.getLongitude();
+
+                        // Se lo mandamos al cerebro (ViewModel)
+                        homeViewModel.verificarUbicacionReal(lat, lon);
+
+                        // Opcional: Para depurar y ver que funciona
+                        // Toast.makeText(getContext(), "GPS Actualizado", Toast.LENGTH_SHORT).show();
+                    }
+                }
+            }
+        };
+
     }
 
     //Implementación de los métodos de SensorEventListener
@@ -302,30 +338,17 @@ public class HomeFragment extends Fragment implements SensorEventListener {
         homeViewModel.updateSteps(totalAVisualizar);
     }
 
-    private void obtenerUbicacionGPS() {
-        // Checar permisos primero
+    private void iniciarGPS() {
         if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED) {
-            // Si no hay permiso, pedirlo (o no hacer nada)
-            return;
+                == PackageManager.PERMISSION_GRANTED) {
+            fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, android.os.Looper.getMainLooper());
         }
-
-        fusedLocationClient.getLastLocation()
-                .addOnSuccessListener(location -> {
-                    if (location != null) {
-                        // ¡TENEMOS COORDENADAS REALES!
-                        double lat = location.getLatitude();
-                        double lon = location.getLongitude();
-
-                        // Se las mandamos al cerebro para que calcule la distancia
-                        homeViewModel.verificarUbicacionReal(lat, lon);
-
-                        // Feedback visual (Opcional)
-                        // Toast.makeText(getContext(), "GPS: " + lat + ", " + lon, Toast.LENGTH_SHORT).show();
-                    } else {
-                        // El GPS está prendido pero no sabe dónde está (común en interiores)
-                        Toast.makeText(getContext(), "Buscando señal GPS...", Toast.LENGTH_SHORT).show();
-                    }
-                });
     }
+
+    private void detenerGPS() {
+        if (fusedLocationClient != null && locationCallback != null) {
+            fusedLocationClient.removeLocationUpdates(locationCallback);
+        }
+    }
+
 }
