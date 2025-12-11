@@ -6,6 +6,8 @@ import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.CollectionReference;
 
+import java.util.Map;
+
 public class UserRepository {
 
     private final FirebaseFirestore db;
@@ -47,6 +49,13 @@ public class UserRepository {
      */
     public Task<com.google.firebase.firestore.DocumentSnapshot> getUser(String userId){
         return db.collection(USERS_COLLECTION).document(userId).get();
+    }
+
+    public Task<Void> updateProfileFields(String uid, Map<String, Object> profileData) {
+        // Usa .update() para modificar campos sin sobrescribir el documento completo
+        return db.collection(USERS_COLLECTION)
+                .document(uid)
+                .update(profileData);
     }
 
     // Aquí podríamos añadir métodos como updateUserName, deleteUserDocument, etc.

@@ -7,6 +7,9 @@ import androidx.lifecycle.ViewModel;
 import com.example.reconfit.repository.AuthRepository;
 import com.google.firebase.auth.FirebaseUser;
 
+import java.util.HashMap;
+import java.util.Map;
+
 
 // El ViewModel es la clase que sobrevive a los cambios de configuración
 public class AuthViewModel extends ViewModel {
@@ -105,4 +108,34 @@ public class AuthViewModel extends ViewModel {
     public void clearErrorState(){
         errorMessage.setValue(null);
     }
+
+    public void completeProfile(String uid, String name, String lastName1, String lastName2, String fecnac, String genero) {
+        // Limpiar el estado anterior
+        errorMessage.setValue(null);
+        operationSuccess.setValue(false);
+
+        // 1. Crear el mapa de datos a actualizar
+        Map<String, Object> profileData = new HashMap<>();
+        profileData.put("name", name);
+        profileData.put("lastName1", lastName1);
+        profileData.put("lastName2", lastName2); // Puede ser vacío, pero se guarda
+        profileData.put("fecnac", fecnac);
+        profileData.put("genero", genero);
+
+        // 2. Llamar al repositorio para ejecutar la actualización
+        authRepository.updateUserProfile(uid, profileData)
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        // Éxito: Perfil actualizado en Firestore
+                        operationSuccess.setValue(true);
+                    } else {
+                        // Fallo: Propagar el mensaje de error de Firestore
+                        String error = task.getException() != null ?
+                                task.getException().getMessage() :
+                                "Error desconocido al completar el perfil.";
+                        errorMessage.setValue(error);
+                    }
+                });
+    }
+
 }

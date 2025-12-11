@@ -59,9 +59,7 @@ public class RegisterFragment extends Fragment {
         registerButton.setOnClickListener(v -> {
             attemptRegistration();
         });
-
-        // 5. Observar el estado del ViewModel (Fase 2)
-        // observeAuthState();
+        observeAuthState();
     }
 
     private void attemptRegistration() {
@@ -86,32 +84,29 @@ public class RegisterFragment extends Fragment {
     }
 
     private void observeAuthState() {
+
         // Observa el resultado de éxito de la operación (registro)
         authViewModel.getOperationSuccess().observe(getViewLifecycleOwner(), isSuccess -> {
             registerButton.setEnabled(true); // Re-habilitar botón siempre al finalizar
+
             if (isSuccess != null && isSuccess) {
-                // Si es exitoso (true), el usuario está creado y logueado
-                Toast.makeText(getContext(), "¡Registro exitoso! Iniciando...", Toast.LENGTH_SHORT).show();
-                // Redirigir a MainActivity
-                Intent intent = new Intent(getActivity(), MainActivity.class);
-                startActivity(intent);
-                // Finalizar AuthActivity para evitar volver a la pantalla de login/registro
-                if (getActivity() != null) {
-                    getActivity().finish();
+                // 🚨 CAMBIO CRÍTICO: Redirección a CompleteProfileFragment
+                Toast.makeText(getContext(), "Registro exitoso. Completa tu perfil.", Toast.LENGTH_SHORT).show();
+                // 1. Redirigir DENTRO de la AuthActivity al fragmento de perfil
+                if (getActivity() instanceof AuthActivity) {
+                    ((AuthActivity) getActivity()).showCompleteProfileFragment();
                 }
+                // NO usamos finish() aquí; AuthActivity permanece abierta para albergar el nuevo fragmento.
             }
         });
 
         // Observa los mensajes de error
         authViewModel.getErrorMessage().observe(getViewLifecycleOwner(), error -> {
             if (error != null && !error.isEmpty()) {
-                registerButton.setEnabled(true); // Re-habilitar botón
-                // Mostrar el error de Firebase (ej: "La dirección de correo electrónico ya está en uso...")
+                registerButton.setEnabled(true);
                 Toast.makeText(getContext(), "Error de Registro: " + error, Toast.LENGTH_LONG).show();
-                // Es importante limpiar el mensaje de error en el LiveData
-                // para que no se dispare de nuevo al rotar el dispositivo, por ejemplo.
                 authViewModel.clearErrorState();
             }
         });
-    } // Lógica de observación (Fase 2)
+    }
 }
