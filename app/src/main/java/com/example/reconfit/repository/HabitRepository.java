@@ -8,6 +8,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.QuerySnapshot;
 
 import java.util.List;
 
@@ -75,6 +76,10 @@ public class HabitRepository {
                 .document(habitId)
                 .update("completed", isCompleted)
                 .addOnFailureListener(e -> System.err.println("Error actualizando hábito"));
+    }
+
+    public Task<QuerySnapshot> getPublicHabits() {
+        return db.collection("public_habits").get();
     }
 
 }
