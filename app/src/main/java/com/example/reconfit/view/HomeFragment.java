@@ -176,19 +176,22 @@ public class HomeFragment extends Fragment implements SensorEventListener {
 
         // Observar el LiveData del ViewModel
         homeViewModel.getDayNightStatus().observe(getViewLifecycleOwner(), statusKey -> {
-            int bgColor;
+            int colorResId;
             // Asignamos solo color basado en la clave técnica
             if("NIGHT_SCHEDULED_DARK".equals(statusKey)){
-                bgColor = getResources().getColor(android.R.color.holo_blue_dark);
+                colorResId = android.R.color.holo_blue_dark;
             }
             else if("DARK_INTERIOR".equals(statusKey)){
-                bgColor = getResources().getColor(android.R.color.holo_orange_dark);
+                colorResId = android.R.color.holo_orange_dark;
             }
             else {
-                bgColor = getResources().getColor(android.R.color.holo_green_dark);
+                colorResId = android.R.color.holo_green_dark;
             }
 
-            dayNightStatusTextView.setBackgroundColor(bgColor);
+            // Usamos ContextCompat para sacar el color real de forma segura
+            int colorFinal = ContextCompat.getColor(requireContext(), colorResId);
+
+            dayNightStatusTextView.setBackgroundColor(colorFinal);
             dayNightStatusTextView.setVisibility(View.VISIBLE);
         });
 

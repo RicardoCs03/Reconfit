@@ -36,8 +36,6 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
-        android:background="@drawable/ic_launcher_background"
-        android:backgroundTint="#FFC107"
         android:paddingHorizontal="16dp"
         android:paddingVertical="8dp"
         android:text="Detectando ambiente..."
