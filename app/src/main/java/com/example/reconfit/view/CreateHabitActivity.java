@@ -2,26 +2,39 @@ package com.example.reconfit.view;
 
 
 import android.os.Bundle;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.RadioGroup;
+import android.widget.Spinner;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.ViewModelProvider;
 
 import com.example.reconfit.R; // Asegúrate de que tu R sea correcto
 import com.example.reconfit.model.Habit;
 import com.example.reconfit.repository.HabitRepository;
+import com.example.reconfit.viewmodel.ZonesViewModel;
 
 import com.google.firebase.Timestamp;
+
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 public class CreateHabitActivity extends AppCompatActivity {
 
     private EditText etName, etDescr;
-    private RadioGroup rgPlace, rgTime;
+    private RadioGroup rgTime;
+    private Spinner spinnerLugar;
     private Button btnSave;
     private HabitRepository repository;
+    private ZonesViewModel zonesViewModel;
+
+    // Variables Datos
+    private List<String> zonasNombres = new ArrayList<>();
+    private ArrayAdapter<String> adapterSpinner;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -30,13 +43,28 @@ public class CreateHabitActivity extends AppCompatActivity {
 
         // Inicializamos el repositorio
         repository = new HabitRepository();
+        zonesViewModel = new ViewModelProvider(this).get(ZonesViewModel.class);
+
+
 
         // Conectamos con la UI
         etName = findViewById(R.id.et_habit_name);
         etDescr = findViewById(R.id.et_habit_description);
-        rgPlace = findViewById(R.id.rg_place);
+        // rgPlace = findViewById(R.id.rg_place);
+        spinnerLugar = findViewById(R.id.spinner_lugar);
         rgTime = findViewById(R.id.rg_time);
         btnSave = findViewById(R.id.btn_save_habit);
+
+        zonesViewModel.getNombresDeZonas().observe(this, listaNombres -> {
+            // Este código se ejecuta solito cuando los datos llegan de Firebase
+            adapterSpinner = new ArrayAdapter<>(
+                    this,
+                    android.R.layout.simple_spinner_item,
+                    listaNombres
+            );
+            adapterSpinner.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            spinnerLugar.setAdapter(adapterSpinner);
+        });
 
         btnSave.setOnClickListener(v -> guardarHabito());
     }
@@ -54,19 +82,19 @@ public class CreateHabitActivity extends AppCompatActivity {
         }
 
         // Obtener valor seleccionado de Lugar
-        String lugar = "Cualquiera";
-        if (rgPlace.getCheckedRadioButtonId() == R.id.rb_home) lugar = "Casa";
-        else if (rgPlace.getCheckedRadioButtonId() == R.id.rb_work) lugar = "Trabajo";
+        String lugarSeleccionado = spinnerLugar.getSelectedItem().toString();
+
 
         // Obtener valor seleccionado de Tiempo
         String tiempo = "Cualquiera";
         if (rgTime.getCheckedRadioButtonId() == R.id.rb_morning) tiempo = "Mañana";
+        else if (rgTime.getCheckedRadioButtonId() == R.id.rb_afternoon) tiempo = "Tarde";
         else if (rgTime.getCheckedRadioButtonId() == R.id.rb_night) tiempo = "Noche";
 
         // Crear el objeto
         Habit nuevoHabito = new Habit();
         nuevoHabito.setName(nombre);
-        nuevoHabito.setContextPlace(lugar);
+        nuevoHabito.setContextPlace(lugarSeleccionado);
         nuevoHabito.setContextTime(tiempo);
         nuevoHabito.setDescription(descr);
         nuevoHabito.setUserId(null);

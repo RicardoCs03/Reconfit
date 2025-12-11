@@ -1,5 +1,6 @@
 package com.example.reconfit.view;
 
+import android.app.AlertDialog;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -15,11 +16,22 @@ import java.util.List;
 public class HabitsAdapter extends RecyclerView.Adapter<HabitsAdapter.HabitViewHolder> {
 
     private List<Habit> habitList = new ArrayList<>();
+    private OnHabitDeleteListener deleteListener;
 
     // Metodo para actualizar la lista cuando el ViewModel nos mande datos nuevos
     public void setHabits(List<Habit> habits) {
         this.habitList = habits;
         notifyDataSetChanged(); // Refresca la pantalla
+    }
+
+    // 2. Interfaz para comunicar el evento
+    public interface OnHabitDeleteListener {
+        void onDelete(String habitId);
+    }
+
+    public HabitsAdapter(List<Habit> habitList, OnHabitDeleteListener listener) {
+        this.habitList = habitList;
+        this.deleteListener = listener;
     }
 
     @NonNull
@@ -34,6 +46,21 @@ public class HabitsAdapter extends RecyclerView.Adapter<HabitsAdapter.HabitViewH
     public void onBindViewHolder(@NonNull HabitViewHolder holder, int position) {
         Habit habit = habitList.get(position);
         holder.bind(habit);
+
+        holder.itemView.setOnLongClickListener(v -> {
+            new AlertDialog.Builder(v.getContext())
+                    .setTitle("Eliminar Hábito")
+                    .setMessage("¿Deseas borrar " + habit.getName() + "?")
+                    .setPositiveButton("Sí", (dialog, which) -> {
+                        // AQUÍ ES EL CAMBIO: No borras, solo "avisas"
+                        if (deleteListener != null) {
+                            deleteListener.onDelete(habit.getId());
+                        }
+                    })
+                    .setNegativeButton("No", null)
+                    .show();
+            return true;
+        });
     }
 
     @Override
@@ -57,7 +84,11 @@ public class HabitsAdapter extends RecyclerView.Adapter<HabitsAdapter.HabitViewH
         void bind(Habit habit) {
             tvName.setText(habit.getName());
             tvDescription.setText(habit.getDescription());
-            tvContext.setText(habit.getContextPlace());
+            // Unimos Lugar y Momento con un punto separador
+            String lugar = habit.getContextPlace();
+            String momento = habit.getContextTime();
+            String textoCombinado = lugar + " • " + momento;
+            tvContext.setText(textoCombinado);
             cbCompleted.setChecked(habit.isCompleted());
         }
     }

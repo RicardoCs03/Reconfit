@@ -5,6 +5,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -17,6 +18,7 @@ import com.example.reconfit.R; // Asegúrate de que tu R sea correcto
 import com.example.reconfit.viewmodel.HabitsViewModel;
 import com.example.reconfit.model.Habit;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class HabitsFragment extends Fragment {
@@ -50,8 +52,12 @@ public class HabitsFragment extends Fragment {
         recyclerView = view.findViewById(R.id.recycler_view_habits);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 
-        // 3. Inicializar el Adaptador (PENDIENTE DE CREAR)
-        habitsAdapter = new HabitsAdapter();
+        // 3. Inicializar el Adaptador
+        habitsAdapter = new HabitsAdapter(new ArrayList<>(), idToDelete -> {
+            // Esta es la lógica que se ejecuta cuando dicen "Sí" en el diálogo
+            habitsViewModel.deleteHabit(idToDelete);
+            Toast.makeText(getContext(), "Hábito eliminado", Toast.LENGTH_SHORT).show();
+        });
         recyclerView.setAdapter(habitsAdapter);
 
         // 4. Observar el LiveData
