@@ -8,6 +8,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
+import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 // ... (otras importaciones) ...
 
@@ -30,9 +31,39 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
         authViewModel = new ViewModelProvider(this).get(AuthViewModel.class);
-        // 2. Ejecutar la lógica de autenticación al inicio
-        observeAuthState();
+        final Observer<FirebaseUser> initialObserver = new Observer<FirebaseUser>() {
+            @Override
+            public void onChanged(FirebaseUser firebaseUser) {
+                authViewModel.getCurrentUser().removeObserver(this);
+                if (firebaseUser == null) {
+                    Intent intent = new Intent(MainActivity.this, AuthActivity.class);
+                    startActivity(intent);
+                    finish();
+                } else {
+                    Log.d("AUTH", "Usuario detectado por el observador. Cargando UI.");
+                    loadMainUI();
+                }
+            }
+        };
+        authViewModel.getCurrentUser().observe(this, initialObserver);
+        observeLogoutState();
+    }
+
+    private void handleInitialAuthState() {
+        // Verificar el estado inmediatamente al inicio de la Activity
+        if (authViewModel.getCurrentUser().getValue() == null) {
+            // Usuario NO autenticado -> Redirigir al Login
+            Intent intent = new Intent(this, AuthActivity.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            startActivity(intent);
+            finish();
+        } else {
+            // Usuario AUTENTICADO -> Cargar la UI principal
+            Log.d("AUTH", "Usuario detectado al inicio. Cargando UI.");
+            loadMainUI();
+        }
     }
 
     // --- NUEVO MÉTODO PARA CENTRALIZAR LA VERIFICACIÓN ---
@@ -83,40 +114,13 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    private void observeAuthState() {
+    private void observeLogoutState() {
         authViewModel.getCurrentUser().observe(this, firebaseUser -> {
-
-            // El observador se dispara cada vez que el estado de Firebase cambia.
-
-            if (firebaseUser != null) {
-                // Usuario logueado o sesión persistente detectada
-                Log.d("AUTH", "Observador: Sesión activa. Cargando UI principal.");
-
-                // Cargar la UI principal solo si aún no está cargada (evitar recarga en rotación)
-                if (findViewById(R.id.bottom_navigation) == null) {
-                    loadMainUI();
-                }
-            } else {
-                // Usuario deslogueado (o sesión no detectada)
-                // Esto solo se ejecutará cuando el usuario haga Logout (nav_logout).
-                // Si findViewById(R.id.bottom_navigation) es != null, significa que estamos
-                // en la MainActivity y necesitamos salir.
+            if (firebaseUser == null) {
 
                 if (findViewById(R.id.bottom_navigation) != null) {
-                    // Redirigir y cerrar MainActivity
-                    checkAuthenticationAndRedirect();
-                } else {
-                    // Si la app inicia y no detecta sesión, debemos forzar la redirección.
-                    // Esta es la lógica que faltaba al inicio.
-                    // Usamos un control para evitar un loop en AuthActivity,
-                    // pero si estamos en MainActivity y no hay usuario, vamos a AuthActivity.
-
-                    // Si llegamos a este punto y el usuario es nulo,
-                    // pero la UI no se ha cargado (es un inicio de app fallido),
-                    // debemos redirigir al Login.
-
-                    // 🚨 Para evitar el rebote, solo llamaremos a checkAuthenticationAndRedirect
-                    // cuando sea forzado por el logout.
+                    // Si la UI principal estaba cargada, la cerramos y vamos al login.
+                    handleInitialAuthState();
                 }
             }
         });
