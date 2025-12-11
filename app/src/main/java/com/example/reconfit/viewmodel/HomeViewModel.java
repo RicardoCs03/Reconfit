@@ -21,6 +21,7 @@ import java.util.List;
 public class HomeViewModel extends AndroidViewModel {
     // Define un LiveData para exponer el estado final a la View
     private MutableLiveData<String> dayNightStatus = new MutableLiveData<>();
+    private MutableLiveData<String> recommendationText = new MutableLiveData<>();
 
     // Definir listas para el contador de pasos
     private MutableLiveData<Integer> steps = new MutableLiveData<>(0);
@@ -35,13 +36,17 @@ public class HomeViewModel extends AndroidViewModel {
     private ZoneRepository zoneRepository;
 
     // Variables de contexto actual
-    private String currentLugar = "Cualquiera"; // Por defecto
-    private String currentMomento = "Mañana";   // Por defecto
+    private String currentLugar = "Cualquiera"; // Por defecto lugar (GPS)
+    private String currentMomento = "Mañana";   // Por defecto (Reloj)
+    private boolean isEnvironmentDark = false; // Por defecto (Sensor Luz)
 
     // Las constantes de la lógica se mueven aquí
     private static final float LIGHT_THRESHOLD = 20.0f;
-    private static final int NIGHT_START_HOUR = 19;
-    private static final int NIGHT_END_HOUR = 5;
+
+    // Rangos horarios (0-23h)
+    private static final int HOUR_MORNING_START = 5;
+    private static final int HOUR_AFTERNOON_START = 12;
+    private static final int HOUR_NIGHT_START = 19; // 7 PM
 
     public HomeViewModel(@NonNull Application application) {
         super(application);
@@ -57,10 +62,96 @@ public class HomeViewModel extends AndroidViewModel {
 
     // --- GETTERS (Lo que ve el Fragment) ---
     public LiveData<String> getDayNightStatus() { return dayNightStatus; }
+    public LiveData<String> getRecommendationText() { return recommendationText; }
     public LiveData<Integer> getSteps() { return steps; }
     public LiveData<List<Habit>> getFocusedHabits() { return focusedHabits; }
 
-    // --- LÓGICA DE CARGA DE DATOS ---
+    // LÓGICA 1: RELOJ (Define el "Momento" para filtrar hábitos)
+    public void actualizarMomentoPorHora() {
+        // Obtener hora actual (0 a 23)
+        Calendar cal = Calendar.getInstance();
+        int hora = cal.get(Calendar.HOUR_OF_DAY);
+
+        String nuevoMomento;
+
+        if (hora >= HOUR_MORNING_START && hora < HOUR_AFTERNOON_START) {
+            nuevoMomento = "Mañana";
+        } else if (hora >= HOUR_AFTERNOON_START && hora < HOUR_NIGHT_START) {
+            nuevoMomento = "Tarde";
+        } else {
+            nuevoMomento = "Noche";
+        }
+
+        // Si cambió el momento (ej. pasamos de Tarde a Noche), actualizamos filtro
+        if (!this.currentMomento.equalsIgnoreCase(nuevoMomento)) {
+            this.currentMomento = nuevoMomento;
+            filtrarHabitos(); // <--- El filtro depende SOLO de la hora y lugar
+        }
+
+        // Siempre recalculamos la matriz de recomendación (texto)
+        calcularMatrizDeRecomendaciones();
+    }
+
+    // LÓGICA 2: SENSOR DE LUZ (Define "Oscuridad" para la recomendación)
+    public void processLightData(float luxValue) {
+        boolean isNowDark = luxValue < LIGHT_THRESHOLD;
+
+        // Solo si la luz cambia drásticamente actualizamos la UI
+        if (this.isEnvironmentDark != isNowDark) {
+            this.isEnvironmentDark = isNowDark;
+            calcularMatrizDeRecomendaciones();
+        }
+
+        // NOTA: La luz YA NO dispara filtrarHabitos(). Eso lo hace la hora.
+    }
+
+    //LÓGICA 3: MATRIZ DE RECOMENDACIONES (Tabla de Verdad)
+    private void calcularMatrizDeRecomendaciones() {
+        // Inputs: currentMomento (Mañana/Tarde/Noche) + isEnvironmentDark (Sí/No)
+
+        String keyColor; // Para el color de fondo (NIGHT_SCHEDULED_DARK, etc)
+        String frase;    // El texto personalizado
+
+        if (currentMomento.equals("Mañana")) {
+            if (isEnvironmentDark) {
+                // Caso: Mañana pero oscuro (madrugada o cuarto cerrado)
+                keyColor = "DARK_INTERIOR";
+                frase = "Empieza tu día con calma.";
+            } else {
+                // Caso: Mañana y claro (Normal)
+                keyColor = "DAYLIGHT";
+                frase = "¡Buenos días! Es hora de activarse.";
+            }
+        }
+        else if (currentMomento.equals("Tarde")) {
+            if (isEnvironmentDark) {
+                // Caso: Tarde pero oscuro (Nublado o cine/oficina cerrada)
+                keyColor = "DARK_INTERIOR";
+                frase = "Poca luz detectada. estás en un interior.";
+            } else {
+                // Caso: Tarde y claro (Normal)
+                keyColor = "DAYLIGHT";
+                frase = "Buenas tardes. Mantén el enfoque.";
+            }
+        }
+        else { // Noche
+            if (isEnvironmentDark) {
+                // Caso: Noche y oscuro (Normal)
+                keyColor = "NIGHT_SCHEDULED_DARK";
+                frase = "Modo Descanso. Desconecta y relájate.";
+            } else {
+                // Caso: Noche pero mucha luz (Lámparas encendidas)
+                keyColor = "DAYLIGHT"; // O un estado intermedio si quisieras
+                frase = "Es de noche pero hay mucha luz. ¡A descansar pronto!";
+            }
+        }
+
+        // Enviamos los resultados a la UI
+        dayNightStatus.setValue(keyColor);
+        recommendationText.setValue(frase);
+    }
+
+    // --- Metodos de Soporte ---
     private void cargarTodosLosHabitos() {
         // Usamos addSnapshotListener para tener actualizaciones en tiempo real
         habitRepository.getHabitsCollection().addSnapshotListener((value, error) -> {
@@ -85,74 +176,20 @@ public class HomeViewModel extends AndroidViewModel {
         });
     }
 
-    public void processLightData(float luxValue) {
-
-        // ******* TODA LA LÓGICA DEL MÉTODO updateDayNightStatus VA AQUÍ *******
-
-        int currentHour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
-        boolean isDark = luxValue < LIGHT_THRESHOLD;
-        boolean isScheduledNight = (currentHour >= NIGHT_START_HOUR || currentHour < NIGHT_END_HOUR);
-        String statusKey;
-        String nuevoMomentoDetectado;
-        if (isDark && isScheduledNight) {
-            statusKey = "NIGHT_SCHEDULED_DARK";
-            nuevoMomentoDetectado = "Noche"; // Coincide con tu Spinner
-        } else if (isDark && !isScheduledNight) {
-            statusKey = "DARK_INTERIOR";
-            nuevoMomentoDetectado = "Mañana"; // Asumimos ambiente relajado
-        } else {
-            statusKey = "DAYLIGHT";
-            nuevoMomentoDetectado = "Mañana"; // Coincide con tu Spinner
-        }
-
-        dayNightStatus.setValue(statusKey);
-
-        // DETECTAR CAMBIO DE CONTEXTO
-        // Solo refiltramos si la situación cambió para no gastar recursos
-        if (!nuevoMomentoDetectado.equals(currentMomento)) {
-            currentMomento = nuevoMomentoDetectado;
-            filtrarHabitos();
-        }
-
-    }
-    // Vamos a priorizar la Hora del Reloj y usar la luz solo como apoyo.
-    public void actualizarMomentoPorHora() {
-        // Obtener hora actual (0 a 23)
-        Calendar cal = Calendar.getInstance();
-        int hora = cal.get(Calendar.HOUR_OF_DAY);
-
-        String nuevoMomento;
-
-        if (hora >= 5 && hora < 12) {
-            nuevoMomento = "Mañana";
-        } else if (hora >= 12 && hora < 19) {
-            nuevoMomento = "Tarde"; // <--- Agregamos Tarde para más precisión
-        } else {
-            nuevoMomento = "Noche";
-        }
-
-        // Actualizar y Filtrar
-        if (!this.currentMomento.equalsIgnoreCase(nuevoMomento)) {
-            this.currentMomento = nuevoMomento;
-            filtrarHabitos();
-        }
-    }
-
     //Metodo para actualizar los pasos
     public void updateSteps(int stepCount) {
         steps.setValue(stepCount);
     }
 
-    // Metodo para cambiar la ubicación (lo usaremos desde el GPS más adelante)
+    public void updateHabitStatus(String habitId, boolean isCompleted) {
+        habitRepository.updateHabitStatus(habitId, isCompleted);
+    }
+
     public void setUbicacionActual(String nuevoLugar) {
         if (!this.currentLugar.equals(nuevoLugar)) {
             this.currentLugar = nuevoLugar;
             filtrarHabitos();
         }
-    }
-
-    public void updateHabitStatus(String habitId, boolean isCompleted) {
-        habitRepository.updateHabitStatus(habitId, isCompleted);
     }
 
     // --- LÓGICA MATEMÁTICA REAL (GPS) ---
