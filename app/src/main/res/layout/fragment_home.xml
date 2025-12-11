@@ -12,8 +12,8 @@
         android:id="@+id/tv_home_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="40dp"
-        android:paddingTop="20dp"
+        android:layout_marginTop="5dp"
+        android:paddingTop="2dp"
         android:text="Bienvenido a ReconFit"
         android:textSize="28sp"
         android:textColor="@color/black"
@@ -33,11 +33,15 @@
 
     <TextView
         android:id="@+id/tv_day_night_status"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
-        android:paddingHorizontal="16dp"
-        android:paddingVertical="8dp"
+        android:background="@drawable/bg_rounded_status"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp"
+        android:gravity="center"
         android:text="Detectando ambiente..."
         android:textColor="@color/white"
         android:textSize="14sp"
@@ -45,7 +49,73 @@
         android:visibility="gone"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/tv_subtitle"
+        app:layout_constraintEnd_toEndOf="parent"
         tools:visibility="visible"/>
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/card_habit_day"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:cardBackgroundColor="@color/calm_purple"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="4dp"
+        android:layout_marginTop="24dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tv_day_night_status">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="20dp">
+
+            <TextView
+                android:id="@+id/tv_habit_title_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Hábito del Día"
+                android:textColor="#E1BEE7"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <TextView
+                android:id="@+id/tv_habit_day_name"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:layout_marginEnd="16dp"
+                android:text="Cargando..."
+                android:textColor="@color/white"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                app:layout_constraintEnd_toStartOf="@+id/iv_star_icon"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/tv_habit_title_label" />
+
+            <TextView
+                android:id="@+id/tv_habit_day_desc"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="..."
+                android:textColor="#F3E5F5"
+                android:textSize="14sp"
+                app:layout_constraintEnd_toEndOf="@+id/tv_habit_day_name"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/tv_habit_day_name" />
+
+            <ImageView
+                android:id="@+id/iv_star_icon"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:src="@drawable/ic_star_white"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+    </androidx.cardview.widget.CardView>
 
     <androidx.cardview.widget.CardView
         android:id="@+id/card_steps"
@@ -55,7 +125,7 @@
         app:cardCornerRadius="16dp"
         app:cardElevation="4dp"
         app:cardBackgroundColor="@color/white"
-        app:layout_constraintTop_toBottomOf="@id/tv_day_night_status"
+        app:layout_constraintTop_toBottomOf="@id/card_habit_day"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 

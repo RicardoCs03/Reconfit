@@ -28,6 +28,8 @@ public class HomeViewModel extends AndroidViewModel {
 
     // Esta lista es la que observará el HomeFragment para llenar el RecyclerView
     private final MutableLiveData<List<Habit>> focusedHabits = new MutableLiveData<>();
+    // Variable para el Hábito del Día
+    private MutableLiveData<Habit> habitOfTheDay = new MutableLiveData<>();
 
     // Cache local: Guardamos todos los hábitos aquí para filtrarlos rápido en memoria
     private List<Habit> allHabitsCache = new ArrayList<>();
@@ -53,6 +55,7 @@ public class HomeViewModel extends AndroidViewModel {
         habitRepository = new HabitRepository();
         // Al iniciar, descargamos todos los hábitos de Firebase
         cargarTodosLosHabitos();
+        cargarHabitoComunidad();
 
         zoneRepository = new ZoneRepository();
         cargarZonas();
@@ -65,6 +68,8 @@ public class HomeViewModel extends AndroidViewModel {
     public LiveData<String> getRecommendationText() { return recommendationText; }
     public LiveData<Integer> getSteps() { return steps; }
     public LiveData<List<Habit>> getFocusedHabits() { return focusedHabits; }
+    // Getter
+    public LiveData<Habit> getHabitOfTheDay() { return habitOfTheDay; }
 
     // LÓGICA 1: RELOJ (Define el "Momento" para filtrar hábitos)
     public void actualizarMomentoPorHora() {
@@ -152,6 +157,27 @@ public class HomeViewModel extends AndroidViewModel {
     }
 
     // --- Metodos de Soporte ---
+    private void cargarHabitoComunidad() {
+        // Usamos el repositorio, ya no hay "FirebaseFirestore.getInstance()" aquí.
+        habitRepository.getPublicHabits()
+                .addOnSuccessListener(querySnapshot -> {
+                    if (!querySnapshot.isEmpty()) {
+                        List<Habit> comunidad = querySnapshot.toObjects(Habit.class); // Convertimos a objetos
+
+                        if (comunidad.size() > 0) {
+                            // Elegir uno basado en el día del año. Esto asegura que rote cada 24 horas automáticamente
+                            int diaDelAnio = Calendar.getInstance().get(Calendar.DAY_OF_YEAR);
+                            int indice = diaDelAnio % comunidad.size();
+                            // Publicamos el resultado
+                            habitOfTheDay.setValue(comunidad.get(indice));
+                        }
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    // Manejo de errores silencioso o log
+                    System.err.println("Error cargando hábito comunidad: " + e.getMessage());
+                });
+    }
     private void cargarTodosLosHabitos() {
         // Usamos addSnapshotListener para tener actualizaciones en tiempo real
         habitRepository.getHabitsCollection().addSnapshotListener((value, error) -> {

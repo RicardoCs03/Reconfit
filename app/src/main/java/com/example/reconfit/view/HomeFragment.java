@@ -4,6 +4,7 @@ import android.Manifest;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.graphics.drawable.Drawable;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -42,6 +43,8 @@ import com.google.android.gms.location.LocationRequest;
 public class HomeFragment extends Fragment implements SensorEventListener {
     //Variables/Objetos/Constantes del sensor:
     private TextView dayNightStatusTextView;
+    private TextView tvHabitDayName;
+    private TextView tvHabitDayDesc;
     private TextView tvPasos;
     private ProgressBar progressBarPasos;
     private CardView cardPasos;
@@ -154,6 +157,8 @@ public class HomeFragment extends Fragment implements SensorEventListener {
 
         // Vincular vistas
         dayNightStatusTextView = view.findViewById(R.id.tv_day_night_status);
+        tvHabitDayName = view.findViewById(R.id.tv_habit_day_name);
+        tvHabitDayDesc = view.findViewById(R.id.tv_habit_day_desc);
         tvPasos = view.findViewById(R.id.tv_steps_count);
         progressBarPasos = view.findViewById(R.id.progress_bar_steps);
         cardPasos = view.findViewById(R.id.card_steps);
@@ -189,30 +194,43 @@ public class HomeFragment extends Fragment implements SensorEventListener {
             requestPermissions(new String[]{Manifest.permission.ACTIVITY_RECOGNITION}, 100);
         }
 
+        // ---- OBSERVADORES ----
         // Observar el LiveData del ViewModel
         homeViewModel.getDayNightStatus().observe(getViewLifecycleOwner(), statusKey -> {
             int colorResId;
             // Asignamos solo color basado en la clave técnica
             if("NIGHT_SCHEDULED_DARK".equals(statusKey)){
-                colorResId = android.R.color.holo_blue_dark;
+                colorResId = R.color.translucent_blue_night;
             }
             else if("DARK_INTERIOR".equals(statusKey)){
-                colorResId = android.R.color.holo_orange_dark;
+                colorResId = R.color.translucent_orange_dark;
             }
             else {
-                colorResId = android.R.color.holo_green_dark;
+                colorResId = R.color.translucent_green_day;
             }
 
             // Usamos ContextCompat para sacar el color real de forma segura
             int colorFinal = ContextCompat.getColor(requireContext(), colorResId);
 
-            dayNightStatusTextView.setBackgroundColor(colorFinal);
+            // Obtenemos el fondo redondo y lo "pintamos" (Tint)
+            Drawable background = dayNightStatusTextView.getBackground();
+            background.mutate().setTint(colorFinal);
             dayNightStatusTextView.setVisibility(View.VISIBLE);
         });
 
         // Observar el TEXTO (La frase inteligente de la matriz)
         homeViewModel.getRecommendationText().observe(getViewLifecycleOwner(), frase -> {
             dayNightStatusTextView.setText(frase);
+        });
+
+        // Observar el habito del dia
+        homeViewModel.getHabitOfTheDay().observe(getViewLifecycleOwner(), habito -> {
+            if (habito != null) {
+                tvHabitDayName.setText(habito.getName());
+                if (tvHabitDayDesc != null) {
+                    tvHabitDayDesc.setText(habito.getDescription());
+                }
+            }
         });
 
         // Observar el LiveData del ViewModel
