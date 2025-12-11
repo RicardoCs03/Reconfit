@@ -18,7 +18,6 @@ public class ZonesAdapter extends RecyclerView.Adapter<ZonesAdapter.ZoneViewHold
 
     // 1. Interfaz de Acción para comunicarnos con el Fragmento
     public interface ZoneActionListener {
-        void onZoneModify(Zone zone);
         void onZoneDelete(Zone zone);
     }
 
@@ -41,7 +40,6 @@ public class ZonesAdapter extends RecyclerView.Adapter<ZonesAdapter.ZoneViewHold
             super(itemView);
             nameTextView = itemView.findViewById(R.id.tv_zone_name);
             detailsTextView = itemView.findViewById(R.id.tv_zone_details);
-            modifyButton = itemView.findViewById(R.id.btn_modify_zone);
             deleteButton = itemView.findViewById(R.id.btn_delete_zone);
         }
     }
@@ -60,16 +58,16 @@ public class ZonesAdapter extends RecyclerView.Adapter<ZonesAdapter.ZoneViewHold
 
         // 3. Bindear datos
         holder.nameTextView.setText(zone.getName());
-        String details = String.format("Lat: %.2f, Lon: %.2f (Radio: %.0fm)",
+        String details = String.format("Lat: %.4f, Lon: %.4f (Radio: %.0fm)",
                 zone.getLatitude(), zone.getLongitude(), zone.getRadiusMeters());
         holder.detailsTextView.setText(details);
 
-        // 4. Configurar Click Listeners para los botones de acción
-        holder.modifyButton.setOnClickListener(v -> {
-            if (actionListener != null) {
-                actionListener.onZoneModify(zone);
-            }
-        });
+//        // 4. Configurar Click Listeners para los botones de acción
+//        holder.modifyButton.setOnClickListener(v -> {
+//            if (actionListener != null) {
+//                actionListener.onZoneModify(zone);
+//            }
+//        });
 
         holder.deleteButton.setOnClickListener(v -> {
             if (actionListener != null) {

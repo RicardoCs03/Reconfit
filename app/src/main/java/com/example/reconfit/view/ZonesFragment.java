@@ -267,17 +267,11 @@ public class ZonesFragment extends Fragment implements LocationListener, ZonesAd
             }
         }
     }
-    @Override
-    public void onZoneModify(Zone zone) {
-        // Lógica para modificar la zona
-        Toast.makeText(requireContext(), "Modificar: " + zone.getName(), Toast.LENGTH_SHORT).show();
-        // **PENDIENTE:** Aquí implementarás la lógica real de modificación (e.g., abrir un diálogo).
-    }
 
     @Override
     public void onZoneDelete(Zone zone) {
         //TODO: Eliminar la zona
-        //viewModel.deleteZone(zone);
+        viewModel.deleteZone(zone);
         Toast.makeText(requireContext(), "Eliminada: " + zone.getName(), Toast.LENGTH_SHORT).show();
         // **NOTA:** La actualización es automática porque el adaptador observa getAllZones()
     }
