@@ -3,6 +3,7 @@ package com.example.reconfit.view;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat; // Importante
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -13,14 +14,20 @@ import com.example.reconfit.R;
 import com.example.reconfit.model.Zone;
 import com.example.reconfit.utils.MapUtils;
 import com.example.reconfit.viewmodel.ZonesViewModel;
+import com.google.android.gms.location.FusedLocationProviderClient; // NUEVO
+import com.google.android.gms.location.LocationCallback; // NUEVO
+import com.google.android.gms.location.LocationRequest; // NUEVO
+import com.google.android.gms.location.LocationResult; // NUEVO
+import com.google.android.gms.location.LocationServices; // NUEVO
 import com.google.firebase.Timestamp;
 
 import android.Manifest;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.location.Location;
-import android.location.LocationListener; // NUEVA IMPORTACIÓN
-import android.location.LocationManager;
+// Borramos LocationListener antiguo
+// import android.location.LocationListener;
+// import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
@@ -33,27 +40,30 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.time.LocalDate;
-import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Date;
 
-// Implementamos LocationListener
-public class ZonesFragment extends Fragment implements LocationListener, ZonesAdapter.ZoneActionListener {
+// YA NO IMPLEMENTAMOS LocationListener, el FusedLocation usa un Callback
+public class ZonesFragment extends Fragment implements ZonesAdapter.ZoneActionListener {
+
     private ZonesViewModel viewModel;
     private TextView statusTextView;
     private EditText zoneNameEditText;
     private Button saveLocationButton;
     private ImageView mapImageView;
-    private LocationManager locationManager;
-    // Almacenamos la última ubicación obtenida
+
+    // --- CAMBIO: MOTOR MODERNO ---
+    private FusedLocationProviderClient fusedLocationClient;
+    private LocationCallback locationCallback;
+    private LocationRequest locationRequest;
+    // -----------------------------
+
     private Location currentLocation = null;
     private RecyclerView zonesRecyclerView;
     private ZonesAdapter zonesAdapter;
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 100;
     private static final String TAG = "ZonesFragment";
     private static final String MY_API_KEY = "AIzaSyC8UJwBn3aDCbrHBg2O7teLMWcx6HlibTg";
-    // ... Constructor y onCreateView iguales ...
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
@@ -66,186 +76,162 @@ public class ZonesFragment extends Fragment implements LocationListener, ZonesAd
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         viewModel = new ViewModelProvider(this).get(ZonesViewModel.class);
-        // Inicializar LocationManager
-        locationManager = (LocationManager) requireActivity().getSystemService(Context.LOCATION_SERVICE);
+
+        // --- 1. INICIALIZAR MOTOR MODERNO (Igual que en HomeFragment) ---
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireActivity());
+
+        // Configurar la petición (Alta precisión, cada 5 seg)
+        locationRequest = LocationRequest.create();
+        locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+        locationRequest.setInterval(5000);
+        locationRequest.setFastestInterval(2000);
+
+        // Configurar qué hacer cuando llega la ubicación
+        locationCallback = new LocationCallback() {
+            @Override
+            public void onLocationResult(@NonNull LocationResult locationResult) {
+                if (locationResult == null) return;
+
+                for (Location location : locationResult.getLocations()) {
+                    if (location != null) {
+                        // ¡AQUÍ LLEGAN LOS DATOS!
+                        actualizarUbicacionUI(location);
+                    }
+                }
+            }
+        };
+        // -------------------------------------------------------------
+
         mapImageView = view.findViewById(R.id.iv_static_map);
         statusTextView = view.findViewById(R.id.tv_zone_status);
         saveLocationButton = view.findViewById(R.id.btn_save_location);
         zoneNameEditText = view.findViewById(R.id.et_zone_name);
 
-
-        // 1. Observar el estado de la zona
+        // Observar estado
         viewModel.getZoneStatus().observe(getViewLifecycleOwner(), status -> {
-            statusTextView.setText(status);
+            statusTextView.setText(status); // Cuidado: esto podría sobrescribir nuestros mensajes de GPS
         });
 
-        // 2. Manejar el clic para guardar la ubicación
         saveLocationButton.setOnClickListener(v -> saveCurrentLocationAsZone());
 
-        // 3. Verificar permisos y empezar a escuchar la ubicación
-        checkLocationPermissionsAndStartListening();
-        // --- INICIALIZACIÓN DEL RECYCLERVIEW (NUEVO BLOQUE) ---
         zonesRecyclerView = view.findViewById(R.id.rv_zones);
-        // Inicializamos el adaptador con una lista vacía y el propio fragmento como listener
         zonesAdapter = new ZonesAdapter(new ArrayList<>(), this);
         zonesRecyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         zonesRecyclerView.setAdapter(zonesAdapter);
-        // 4. Observar la lista de zonas desde el ViewModel
+
         viewModel.getAllZones().observe(getViewLifecycleOwner(), zones -> {
-            // Cuando la lista de zonas cambie, actualizamos el adaptador
             zonesAdapter.setZones(zones);
         });
+
+        // Iniciar GPS al crear la vista
+        checkLocationPermissionsAndStartListening();
     }
 
-    // Nuevo método: Comprobar permisos e iniciar la escucha activa
+    // Método auxiliar para manejar la llegada de datos
+    private void actualizarUbicacionUI(Location location) {
+        this.currentLocation = location;
+
+        Log.d("RECONFIT_DEBUG", "ZONES: Ubicación recibida: " + location.getLatitude() + ", " + location.getLongitude());
+
+        statusTextView.setText(
+                String.format("Ubicación lista: %.4f, %.4f", location.getLatitude(), location.getLongitude())
+        );
+
+        loadStaticMap(location.getLatitude(), location.getLongitude());
+
+        // Calcular distancias con las zonas existentes
+        viewModel.checkDistanceToZones(location.getLatitude(), location.getLongitude());
+    }
+
     private void checkLocationPermissionsAndStartListening() {
         if (!checkLocationPermissions()) {
             requestLocationPermissions();
             return;
         }
-        // Si los permisos están, iniciamos la escucha
         startLocationUpdates();
     }
 
-    /**
-     * Carga la imagen del mapa estático en el ImageView usando Glide.
-     * @param lat Latitud para centrar y marcar.
-     * @param lng Longitud para centrar y marcar.
-     */
     private void loadStaticMap(double lat, double lng) {
         if (mapImageView == null) return;
-
-        // 1. Construir la URL con la utilidad que creamos
         String mapUrl = MapUtils.buildStaticMapUrl(lat, lng, MY_API_KEY);
-
-        Log.d(TAG, "Cargando mapa con URL: " + mapUrl);
-
-        // 2. Usar Glide para cargar la URL en el ImageView de forma asíncrona
         Glide.with(this)
                 .load(mapUrl)
-                .placeholder(R.drawable.ic_map) // Asume un placeholder para cuando está cargando
-                .error(R.drawable.ic_error)    // Asume un icono de error si falla la carga
-                .centerCrop() // Opcional: ajusta la imagen al tamaño del ImageView
+                .placeholder(R.drawable.ic_map)
+                .error(R.drawable.ic_error)
+                .centerCrop()
                 .into(mapImageView);
     }
 
-    // Método para iniciar la escucha de actualizaciones de ubicación
+    // --- CAMBIO: USAR FUSEDLOCATION ---
     private void startLocationUpdates() {
-        if (!checkLocationPermissions()) return;
-
-        // Comprobación final de permisos (requerida por el IDE)
         if (ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             return;
         }
 
-        try {
-            // Intentamos registrar al LocationListener usando el proveedor GPS
-            locationManager.requestLocationUpdates(
-                    LocationManager.GPS_PROVIDER,
-                    2000, // minTime: 2 segundos
-                    10,   // minDistance: 10 metros
-                    this // El fragmento es el listener
-            );
-            statusTextView.setText("Escuchando ubicación (GPS)...");
+        Log.d("RECONFIT_DEBUG", "ZONES: Iniciando actualizaciones de GPS...");
+        statusTextView.setText("Buscando señal GPS...");
 
-            // Intento secundario con el proveedor de Red, si el GPS no está activo
-            if (!locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-                locationManager.requestLocationUpdates(
-                        LocationManager.NETWORK_PROVIDER,
-                        2000,
-                        10,
-                        this
-                );
-                statusTextView.setText("Escuchando ubicación (Red)...");
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "Error al solicitar actualizaciones de ubicación: " + e.getMessage());
-            statusTextView.setText("Error al iniciar la ubicación.");
+        // Solicitamos actualizaciones al cliente moderno
+        fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, android.os.Looper.getMainLooper());
+    }
+
+    private void stopLocationUpdates() {
+        if (fusedLocationClient != null && locationCallback != null) {
+            fusedLocationClient.removeLocationUpdates(locationCallback);
         }
     }
 
-    // Detenemos las actualizaciones cuando el fragmento se destruye o se pausa
+    // Ciclo de vida: Detener al salir, iniciar al volver
     @Override
     public void onPause() {
         super.onPause();
-        locationManager.removeUpdates(this);
+        stopLocationUpdates();
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        // Reiniciamos la escucha si volvemos al fragmento
-        startLocationUpdates();
+        if (checkLocationPermissions()) {
+            startLocationUpdates();
+        }
     }
 
-
-    // Método que maneja la obtención de la ubicación y el guardado
     private void saveCurrentLocationAsZone() {
         if (currentLocation != null) {
             String zoneName = zoneNameEditText.getText().toString().trim();
-            // Añadimos una validación para asegurar que el nombre no esté vacío**
             if (zoneName.isEmpty()) {
                 Toast.makeText(requireContext(), "Por favor, ingresa un nombre para la zona.", Toast.LENGTH_SHORT).show();
                 return;
             }
-            Zone newZone = null;
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                newZone = new Zone(
-                        null, // Firestore generará el ID
-                        zoneName,
-                        currentLocation.getLatitude(),
-                        currentLocation.getLongitude(),
-                        100.0, // 100 metros de radio
-                        new Timestamp(new Date()),
-                        null // El usuario actual será el creador
-                );
-            }
-            viewModel.saveCurrentZone(newZone);
-            viewModel.checkDistanceToZones(currentLocation.getLatitude(), currentLocation.getLongitude());
-            Toast.makeText(requireContext(), "Zona '" + zoneName + "' guardada.", Toast.LENGTH_SHORT).show();
 
-            // Opcional: detenemos la escucha una vez que guardamos la ubicación
-            locationManager.removeUpdates(this);
+            Zone newZone = null;
+            // Quitamos la validación de versión de Android, Zone siempre se puede crear
+            newZone = new Zone(
+                    null,
+                    zoneName,
+                    currentLocation.getLatitude(),
+                    currentLocation.getLongitude(),
+                    100.0,
+                    new Timestamp(new Date()),
+                    null
+            );
+
+            viewModel.saveCurrentZone(newZone);
+
+            // Recalculamos inmediatamente
+            viewModel.checkDistanceToZones(currentLocation.getLatitude(), currentLocation.getLongitude());
+
+            Toast.makeText(requireContext(), "Zona '" + zoneName + "' guardada.", Toast.LENGTH_SHORT).show();
+            zoneNameEditText.setText(""); // Limpiar campo
 
         } else {
             statusTextView.setText("Ubicación actual no disponible. Esperando señal...");
-            Toast.makeText(requireContext(), "Esperando ubicación, por favor espera.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(requireContext(), "Esperando ubicación...", Toast.LENGTH_SHORT).show();
         }
     }
 
-    // Métodos de LocationListener
-    @Override
-    public void onLocationChanged(@NonNull Location location) {
-        // Esta función se llama CADA VEZ que llega una nueva ubicación
-        this.currentLocation = location;
-
-        statusTextView.setText(
-                String.format("Ubicación lista: %.4f, %.4f", location.getLatitude(), location.getLongitude())
-        );
-        loadStaticMap(currentLocation.getLatitude(), currentLocation.getLongitude());
-        // Llamamos a la lógica de verificación tan pronto como recibimos una ubicación
-        viewModel.checkDistanceToZones(location.getLatitude(), location.getLongitude());
-
-        // Podemos detener la escucha después de la primera ubicación exitosa si solo la necesitamos una vez
-        // locationManager.removeUpdates(this);
-    }
-
-    // Otros métodos de LocationListener (pueden dejarse vacíos)
-    @Override
-    public void onStatusChanged(String provider, int status, Bundle extras) {}
-    @Override
-    public void onProviderEnabled(@NonNull String provider) {
-        Log.i(TAG, provider + " habilitado.");
-    }
-    @Override
-    public void onProviderDisabled(@NonNull String provider) {
-        statusTextView.setText("Proveedor de ubicación (" + provider + ") desactivado.");
-    }
-
-    // ... checkLocationPermissions() y onRequestPermissionsResult() quedan iguales ...
-
     private boolean checkLocationPermissions() {
-        return requireContext().checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+        return ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
     }
 
     private void requestLocationPermissions() {
@@ -260,19 +246,16 @@ public class ZonesFragment extends Fragment implements LocationListener, ZonesAd
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                // Permisos concedidos, intenta obtener la ubicación de nuevo
                 startLocationUpdates();
             } else {
-                statusTextView.setText("Permiso de ubicación denegado. Las Zonas no funcionarán.");
+                statusTextView.setText("Permiso denegado.");
             }
         }
     }
 
     @Override
     public void onZoneDelete(Zone zone) {
-        //TODO: Eliminar la zona
         viewModel.deleteZone(zone);
         Toast.makeText(requireContext(), "Eliminada: " + zone.getName(), Toast.LENGTH_SHORT).show();
-        // **NOTA:** La actualización es automática porque el adaptador observa getAllZones()
     }
 }

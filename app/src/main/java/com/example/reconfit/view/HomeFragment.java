@@ -49,6 +49,7 @@ public class HomeFragment extends Fragment implements SensorEventListener {
     private TextView tvPasos;
     private ProgressBar progressBarPasos;
     private CardView cardPasos;
+    private TextView tvTituloContexto;
     private SensorManager sensorManager;
     private Sensor lightSensor;
     private Sensor stepSensor;
@@ -182,6 +183,7 @@ public class HomeFragment extends Fragment implements SensorEventListener {
         tvPasos = view.findViewById(R.id.tv_steps_count);
         progressBarPasos = view.findViewById(R.id.progress_bar_steps);
         cardPasos = view.findViewById(R.id.card_steps);
+        tvTituloContexto = view.findViewById(R.id.tv_context_label);
 
         //Inicializamos el Gestor de Sensores
         sensorManager = (SensorManager) requireContext().getSystemService(Context.SENSOR_SERVICE);
@@ -338,6 +340,22 @@ public class HomeFragment extends Fragment implements SensorEventListener {
             }
         });
 
+        // 2. Observa los cambios de lugar
+        homeViewModel.getLugarDetectado().observe(getViewLifecycleOwner(), nombreLugar -> {
+            if (nombreLugar != null && tvTituloContexto != null) {
+
+                // LÓGICA DE PRESENTACIÓN
+                if (nombreLugar.equals("Cualquiera") || nombreLugar.equals("Escuchando...")) {
+                    // Si no detecta zona específica, texto genérico
+                    tvTituloContexto.setText("En Foco (Sugerencias)");
+                } else {
+                    // Si detecta zona, formato del Proyecto
+                    tvTituloContexto.setText("En Foco (Estás en '" + nombreLugar + "')");
+                }
+            }
+        });
+
+        // --- ACTUALIZACION INSTANTANTEA ---
         // Configurar la petición de GPS (Qué tan rápido queremos actualizaciones)
         locationRequest = LocationRequest.create();
         locationRequest.setPriority(com.google.android.gms.location.LocationRequest.PRIORITY_HIGH_ACCURACY);

@@ -35,6 +35,8 @@ public class HomeViewModel extends AndroidViewModel {
     private List<Habit> allHabitsCache = new ArrayList<>();
     private HabitRepository habitRepository;
     private List<Zone> allZonesCache = new ArrayList<>();
+    // Variable LiveData para el nombre del lugar
+    private MutableLiveData<String> lugarDetectadoLive = new MutableLiveData<>("Escuchando...");
     private ZoneRepository zoneRepository;
 
     // Variables de contexto actual
@@ -70,6 +72,8 @@ public class HomeViewModel extends AndroidViewModel {
     public LiveData<List<Habit>> getFocusedHabits() { return focusedHabits; }
     // Getter
     public LiveData<Habit> getHabitOfTheDay() { return habitOfTheDay; }
+    // 2. Getter para que el Fragment escuche
+    public LiveData<String> getLugarDetectado() { return lugarDetectadoLive; }
 
     // LÓGICA 1: RELOJ (Define el "Momento" para filtrar hábitos)
     public void actualizarMomentoPorHora() {
@@ -246,6 +250,7 @@ public class HomeViewModel extends AndroidViewModel {
         // (Solo si cambió para no parpadear)
         if (!this.currentLugar.equalsIgnoreCase(lugarDetectado)) {
             this.currentLugar = lugarDetectado;
+            lugarDetectadoLive.setValue(lugarDetectado);
             filtrarHabitos(); // <--- El cerebro actualiza la lista
         }
     }
