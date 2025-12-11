@@ -8,8 +8,10 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
 import com.example.reconfit.R;
 import com.example.reconfit.model.Zone;
+import com.example.reconfit.utils.MapUtils;
 import com.example.reconfit.viewmodel.ZonesViewModel;
 import com.google.firebase.Timestamp;
 
@@ -27,6 +29,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -41,6 +44,7 @@ public class ZonesFragment extends Fragment implements LocationListener, ZonesAd
     private TextView statusTextView;
     private EditText zoneNameEditText;
     private Button saveLocationButton;
+    private ImageView mapImageView;
     private LocationManager locationManager;
     // Almacenamos la última ubicación obtenida
     private Location currentLocation = null;
@@ -48,6 +52,7 @@ public class ZonesFragment extends Fragment implements LocationListener, ZonesAd
     private ZonesAdapter zonesAdapter;
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 100;
     private static final String TAG = "ZonesFragment";
+    private static final String MY_API_KEY = "AIzaSyC8UJwBn3aDCbrHBg2O7teLMWcx6HlibTg";
     // ... Constructor y onCreateView iguales ...
 
     @Override
@@ -60,12 +65,10 @@ public class ZonesFragment extends Fragment implements LocationListener, ZonesAd
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-
         viewModel = new ViewModelProvider(this).get(ZonesViewModel.class);
-
         // Inicializar LocationManager
         locationManager = (LocationManager) requireActivity().getSystemService(Context.LOCATION_SERVICE);
-
+        mapImageView = view.findViewById(R.id.iv_static_map);
         statusTextView = view.findViewById(R.id.tv_zone_status);
         saveLocationButton = view.findViewById(R.id.btn_save_location);
         zoneNameEditText = view.findViewById(R.id.et_zone_name);
@@ -100,9 +103,30 @@ public class ZonesFragment extends Fragment implements LocationListener, ZonesAd
             requestLocationPermissions();
             return;
         }
-
         // Si los permisos están, iniciamos la escucha
         startLocationUpdates();
+    }
+
+    /**
+     * Carga la imagen del mapa estático en el ImageView usando Glide.
+     * @param lat Latitud para centrar y marcar.
+     * @param lng Longitud para centrar y marcar.
+     */
+    private void loadStaticMap(double lat, double lng) {
+        if (mapImageView == null) return;
+
+        // 1. Construir la URL con la utilidad que creamos
+        String mapUrl = MapUtils.buildStaticMapUrl(lat, lng, MY_API_KEY);
+
+        Log.d(TAG, "Cargando mapa con URL: " + mapUrl);
+
+        // 2. Usar Glide para cargar la URL en el ImageView de forma asíncrona
+        Glide.with(this)
+                .load(mapUrl)
+                .placeholder(R.drawable.ic_map) // Asume un placeholder para cuando está cargando
+                .error(R.drawable.ic_error)    // Asume un icono de error si falla la carga
+                .centerCrop() // Opcional: ajusta la imagen al tamaño del ImageView
+                .into(mapImageView);
     }
 
     // Método para iniciar la escucha de actualizaciones de ubicación
@@ -198,7 +222,7 @@ public class ZonesFragment extends Fragment implements LocationListener, ZonesAd
         statusTextView.setText(
                 String.format("Ubicación lista: %.4f, %.4f", location.getLatitude(), location.getLongitude())
         );
-
+        loadStaticMap(currentLocation.getLatitude(), currentLocation.getLongitude());
         // Llamamos a la lógica de verificación tan pronto como recibimos una ubicación
         viewModel.checkDistanceToZones(location.getLatitude(), location.getLongitude());
 

@@ -38,27 +38,22 @@ android {
 }
 
 dependencies {
+    // Glide
+    implementation("com.github.bumptech.glide:glide:4.16.0")
+    annotationProcessor("com.github.bumptech.glide:compiler:4.16.0")
     //Firebase
     implementation(platform("com.google.firebase:firebase-bom:34.6.0"))
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.firebase:firebase-firestore")
     implementation("com.google.firebase:firebase-analytics")
-    // Android UI
     //implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.auth)
-    //óóimplementation(libs.play.services.location)
-    // Dependencia principal de Lombok (Solo Compilación)
     compileOnly("org.projectlombok:lombok:1.18.30")
     // Procesador de Anotaciones para Java
     annotationProcessor("org.projectlombok:lombok:1.18.30")
-
-    // Procesador de Anotaciones para Kotlin
-    //kapt("org.projectlombok:lombok:1.18.30")
-    // (Opcional) Para pruebas
-    //kaptTest("org.projectlombok:lombok:1.18.30")
 
     // Testing
     testAnnotationProcessor("org.projectlombok:lombok:1.18.30")

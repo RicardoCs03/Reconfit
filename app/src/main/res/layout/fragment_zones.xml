@@ -62,7 +62,17 @@
         android:layout_height="0dp"
         android:layout_marginTop="16dp"
         app:layout_constraintTop_toBottomOf="@id/btn_save_location"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toBottomOf="@id/iv_static_map"
         tools:listitem="@layout/item_zone" />
+
+    <ImageView
+        android:id="@+id/iv_static_map"
+        android:layout_width="match_parent"
+        android:layout_height="200dp"
+        android:scaleType="centerCrop"
+        android:layout_marginTop="16dp"
+        app:layout_constraintTop_toBottomOf="@id/rv_zones"
+        app:layout_constraintBottom_toBottomOf="parent"
+        android:contentDescription="Mapa de ubicación actual" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
