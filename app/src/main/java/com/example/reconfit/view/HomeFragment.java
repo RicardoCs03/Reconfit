@@ -1,6 +1,7 @@
 package com.example.reconfit.view;
 
 import android.Manifest;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.hardware.Sensor;
@@ -67,6 +68,17 @@ public class HomeFragment extends Fragment implements SensorEventListener {
 
     }
 
+    // Receptor que escucha el reloj del sistema
+    private final BroadcastReceiver timeReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, android.content.Intent intent) {
+            // Cada minuto (TIME_TICK) o si cambias la hora manual (TIME_CHANGED)
+            if (homeViewModel != null) {
+                homeViewModel.actualizarMomentoPorHora();
+            }
+        }
+    };
+
     @Override
     public void onResume(){
         super.onResume();
@@ -76,7 +88,21 @@ public class HomeFragment extends Fragment implements SensorEventListener {
         if(isSensorPresent && sensorManager != null) {
             sensorManager.registerListener(this, stepSensor, SensorManager.SENSOR_DELAY_NORMAL);
         }
+
+        // Iniciar escaneo de GPS (cada 5 segundos)
         iniciarGPS();
+
+        // Actualizacion inmediata (Manual)
+        if (homeViewModel != null) {
+            homeViewModel.actualizarMomentoPorHora();
+        }
+
+        // Registrar el receptor de tiempo
+        android.content.IntentFilter filter = new android.content.IntentFilter();
+        filter.addAction(android.content.Intent.ACTION_TIME_TICK);    // Cada minuto
+        filter.addAction(android.content.Intent.ACTION_TIME_CHANGED); // Cambio manual
+        filter.addAction(android.content.Intent.ACTION_TIMEZONE_CHANGED); // Cambio de zona
+        requireContext().registerReceiver(timeReceiver, filter);
     }
 
     @Override
@@ -85,7 +111,16 @@ public class HomeFragment extends Fragment implements SensorEventListener {
         if (sensorManager != null) {
             sensorManager.unregisterListener(this);
         }
+
         detenerGPS();
+
+        // Dejar de escuchar el tiempo para ahorrar batería
+        try {
+            requireContext().unregisterReceiver(timeReceiver);
+        } catch (IllegalArgumentException e) {
+            // Evitamos errores si por alguna razón no estaba registrado
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -140,26 +175,29 @@ public class HomeFragment extends Fragment implements SensorEventListener {
         }
 
         // Observar el LiveData del ViewModel
-        homeViewModel.getDayNightStatus().observe(getViewLifecycleOwner(), status -> {
-            String statusText;
-            int bgColor;
-
-            if("NIGHT_SCHEDULED_DARK".equals(status)){
-                statusText="Es de noche, modo descanso sugerido!";
-                bgColor = getResources().getColor(android.R.color.holo_blue_dark);
+        homeViewModel.getDayNightStatus().observe(getViewLifecycleOwner(), statusKey -> {
+            int colorResId;
+            // Asignamos solo color basado en la clave técnica
+            if("NIGHT_SCHEDULED_DARK".equals(statusKey)){
+                colorResId = android.R.color.holo_blue_dark;
             }
-            else if("DARK_INTERIOR".equals(status)){
-                statusText="Oscuridad detectada, estás en un interior.";
-                bgColor = getResources().getColor(android.R.color.holo_orange_dark);
+            else if("DARK_INTERIOR".equals(statusKey)){
+                colorResId = android.R.color.holo_orange_dark;
             }
             else {
-                statusText = "¡Es de Día! ¡A entrenar!";
-                bgColor = getResources().getColor(android.R.color.holo_green_dark);
+                colorResId = android.R.color.holo_green_dark;
             }
-            dayNightStatusTextView.setText(statusText);
-            dayNightStatusTextView.setBackgroundColor(bgColor);
-            dayNightStatusTextView.setVisibility(View.VISIBLE);
 
+            // Usamos ContextCompat para sacar el color real de forma segura
+            int colorFinal = ContextCompat.getColor(requireContext(), colorResId);
+
+            dayNightStatusTextView.setBackgroundColor(colorFinal);
+            dayNightStatusTextView.setVisibility(View.VISIBLE);
+        });
+
+        // Observar el TEXTO (La frase inteligente de la matriz)
+        homeViewModel.getRecommendationText().observe(getViewLifecycleOwner(), frase -> {
+            dayNightStatusTextView.setText(frase);
         });
 
         // Observar el LiveData del ViewModel
@@ -167,7 +205,6 @@ public class HomeFragment extends Fragment implements SensorEventListener {
             if (currentSteps != null) {
                 // Actualizamos el texto
                 tvPasos.setText(currentSteps + " / 5,000");  // Hardcode de la meta de pasos diario
-
                 // Actualizamos la barra de progreso
                 progressBarPasos.setProgress(currentSteps);
             }
@@ -180,7 +217,7 @@ public class HomeFragment extends Fragment implements SensorEventListener {
 
             // Obtenemos los datos actuales y los actualizamos
             int extraActuales = prefs.getInt("pasos_extra_simulados", 0);
-            int nuevosExtra = extraActuales + 500;
+            int nuevosExtra = extraActuales + 1;
 
             // Guardar en memoria permanente
             prefs.edit().putInt("pasos_extra_simulados", nuevosExtra).apply();
