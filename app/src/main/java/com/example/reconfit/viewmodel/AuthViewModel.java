@@ -5,6 +5,8 @@ import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
 import com.example.reconfit.repository.AuthRepository;
+import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException;
+import com.google.firebase.auth.FirebaseAuthInvalidUserException;
 import com.google.firebase.auth.FirebaseUser;
 
 import java.util.HashMap;
@@ -83,6 +85,7 @@ public class AuthViewModel extends ViewModel {
         // Limpiar el estado anterior
         errorMessage.setValue(null);
         operationSuccess.setValue(false);
+
         authRepository.login(email, password)
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
@@ -90,13 +93,34 @@ public class AuthViewModel extends ViewModel {
                         operationSuccess.setValue(true);
                     } else {
                         // Fallo: Propagar el mensaje de error de Firebase
-                        String error = task.getException() != null ?
-                                task.getException().getMessage() :
-                                "Error desconocido al iniciar sesión.";
+                        String error;
+                        if (task.getException() != null) {
+                            // Intentamos obtener un mensaje amigable o genérico
+                            error = getFriendlyErrorMessage(task.getException());
+                        } else {
+                            error = "Error desconocido al iniciar sesión.";
+                        }
+
+                        // ¡La notificación clave!
                         errorMessage.setValue(error);
                     }
                 });
     }
+
+    // Opcional: Función para traducir errores crudos de Firebase a mensajes amigables
+    private String getFriendlyErrorMessage(Exception exception) {
+        if (exception instanceof FirebaseAuthInvalidCredentialsException) {
+            return "Por favor, revisa tu correo y contraseña.";
+        }
+        if (exception instanceof FirebaseAuthInvalidUserException) {
+            return "No existe ninguna cuenta con este correo electrónico.";
+        }
+        // Puedes añadir más tipos de errores (ej. red)
+        return "Error al iniciar sesión: " + exception.getMessage();
+    }
+
+    // Getter para la vista
+
 
     /**
      * Cierra la sesión del usuario actual.
