@@ -14,6 +14,7 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
 import java.util.Date;
+import java.util.Map;
 import java.util.concurrent.Executors;
 
 public class AuthRepository {
@@ -58,12 +59,10 @@ public class AuthRepository {
         // 1. Crear el usuario en Firebase Authentication
         return firebaseAuth.createUserWithEmailAndPassword(email, password)
                 .continueWithTask(task -> {
-                    Log.d("AuthRepository", "Intentando Registrar con: " + email);
                     if (task.isSuccessful()) {
                         FirebaseUser firebaseUser = firebaseAuth.getCurrentUser();
                         if (firebaseUser != null) {
                             Log.d("AuthRepository", "Intentando Registrar con: " + email);
-                            // 2. Crear el objeto User para Firestore
                             User newUser = new User(
                                     firebaseUser.getUid(), // Usamos el UID como ID del documento
                                     "",//Nombre
@@ -84,8 +83,6 @@ public class AuthRepository {
                 });
     }
 
-    // --- Lógica de Inicio de Sesión ---
-
     /**
      * Inicia sesión con credenciales de email y contraseña.
      *
@@ -97,9 +94,12 @@ public class AuthRepository {
         return firebaseAuth.signInWithEmailAndPassword(email, password);
     }
 
-    // --- Lógica de Cierre de Sesión ---
-
     public void logout() {
         firebaseAuth.signOut();
+    }
+
+    public Task<Void> updateUserProfile(String uid, Map<String, Object> profileData) {
+        // 🚨 CORRECCIÓN: Llama al método de actualización del UserRepository.
+        return userRepository.updateProfileFields(uid, profileData);
     }
 }
