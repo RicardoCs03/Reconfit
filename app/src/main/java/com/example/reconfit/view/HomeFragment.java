@@ -29,6 +29,7 @@ import android.content.SharedPreferences;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 import com.google.android.gms.location.FusedLocationProviderClient;
 
@@ -152,8 +153,27 @@ public class HomeFragment extends Fragment implements SensorEventListener {
         homeViewModel = new ViewModelProvider(requireActivity()).get(HomeViewModel.class);
         fusedLocationClient = com.google.android.gms.location.LocationServices.getFusedLocationProviderClient(requireActivity());
 
-        // Llamar a la ubicación real
-        //obtenerUbicacionGPS();
+        // Lista de permisos que necesitamos
+        List<String> permisosNecesarios = new ArrayList<>();
+
+        // 1. Checar Ubicación
+        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+            permisosNecesarios.add(Manifest.permission.ACCESS_FINE_LOCATION);
+        }
+
+        // 2. Checar Actividad Física (Solo si es Android 10/Q o superior)
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACTIVITY_RECOGNITION)
+                    != PackageManager.PERMISSION_GRANTED) {
+                permisosNecesarios.add(Manifest.permission.ACTIVITY_RECOGNITION);
+            }
+        }
+
+        // 3. Si falta alguno, pedirlos todos de golpe
+        if (!permisosNecesarios.isEmpty()) {
+            requestPermissions(permisosNecesarios.toArray(new String[0]), 100);
+        }
 
         // Vincular vistas
         dayNightStatusTextView = view.findViewById(R.id.tv_day_night_status);
@@ -177,11 +197,13 @@ public class HomeFragment extends Fragment implements SensorEventListener {
         // Verificar si existe el sensor de pasos // LÓGICA DE PRIORIDAD DE SENSORES
         if(sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER) != null) {
             // Se inicializa sensor de pasos // Plan A: Usar el sensor dedicado (Más preciso)
+            android.util.Log.d("RECONFIT_DEBUG", "SENSOR: ¡Tenemos Chip de Pasos (Hardware)!");
             stepSensor = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER);
             isSensorPresent = true;
             accelerometer = null; // No usamos acelerómetro
         } else {
             // Plan B: Usar Acelerómetro (Matemáticas)
+            android.util.Log.d("RECONFIT_DEBUG", "SENSOR: No hay chip. Usando Acelerómetro (Plan B)");
             accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
             stepSensor = null;
             isSensorPresent = false; // "False" porque no es el sensor de pasos dedicado
@@ -327,13 +349,19 @@ public class HomeFragment extends Fragment implements SensorEventListener {
             @Override
             public void onLocationResult(@androidx.annotation.NonNull com.google.android.gms.location.LocationResult locationResult) {
                 if (locationResult == null) {
+                    android.util.Log.w("RECONFIT_DEBUG", "GPS: Callback ejecutado pero result es NULL");
                     return;
                 }
+                android.util.Log.d("RECONFIT_DEBUG", "GPS: ¡Llegaron " + locationResult.getLocations().size() + " ubicaciones!");
                 for (android.location.Location location : locationResult.getLocations()) {
                     if (location != null) {
                         // ¡AQUÍ LLEGA EL DATO FRESCO!
                         double lat = location.getLatitude();
                         double lon = location.getLongitude();
+                        float acc = location.getAccuracy();
+
+                        // LOG CRÍTICO CON DATOS
+                        android.util.Log.d("RECONFIT_DEBUG", "GPS DATO: Lat=" + lat + ", Lon=" + lon + " (Precisión: " + acc + "m)");
 
                         // Se lo mandamos al cerebro (ViewModel)
                         homeViewModel.verificarUbicacionReal(lat, lon);
@@ -356,6 +384,20 @@ public class HomeFragment extends Fragment implements SensorEventListener {
 
     @Override
     public void onSensorChanged(SensorEvent event) {
+        // LOG PARA PASOS (HARDWARE)
+        if (event.sensor.getType() == Sensor.TYPE_STEP_COUNTER) {
+            android.util.Log.d("RECONFIT_DEBUG", "PASOS (HW): Valor recibido del chip = " + event.values[0]);
+        }
+
+        // LOG PARA ACELERÓMETRO
+        else if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
+            // Solo imprime si el movimiento es fuerte para no saturar el log
+            double magnitude = Math.sqrt(event.values[0] * event.values[0] + event.values[1] * event.values[1] + event.values[2] * event.values[2]);
+            if (magnitude > 11.0) {
+                android.util.Log.d("RECONFIT_DEBUG", "ACELERÓMETRO: ¡Movimiento detectado! Mag=" + magnitude);
+            }
+        }
+
         // LOGICA SENSORES
         // Sensor de luz
         if (event.sensor.getType() == Sensor.TYPE_LIGHT) {
@@ -493,9 +535,16 @@ public class HomeFragment extends Fragment implements SensorEventListener {
     }
 
     private void iniciarGPS() {
+        android.util.Log.d("RECONFIT_DEBUG", "GPS: Intentando iniciar actualizaciones..."); // <--- LOG
+
         if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION)
                 == PackageManager.PERMISSION_GRANTED) {
+
+            android.util.Log.d("RECONFIT_DEBUG", "GPS: Permiso CONCEDIDO. Solicitando updates..."); // <--- LOG
             fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, android.os.Looper.getMainLooper());
+
+        } else {
+            android.util.Log.e("RECONFIT_DEBUG", "GPS: ¡Permiso DENEGADO! No puedo iniciar."); // <--- LOG DE ERROR
         }
     }
 
