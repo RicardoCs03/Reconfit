@@ -151,6 +151,10 @@ public class HomeViewModel extends AndroidViewModel {
         }
     }
 
+    public void updateHabitStatus(String habitId, boolean isCompleted) {
+        habitRepository.updateHabitStatus(habitId, isCompleted);
+    }
+
     // --- LÓGICA MATEMÁTICA REAL (GPS) ---
     public void verificarUbicacionReal(double latActual, double lonActual) {
         String lugarDetectado = "Cualquiera"; // Si no estoy cerca de nada, soy libre
@@ -196,8 +200,10 @@ public class HomeViewModel extends AndroidViewModel {
             // B. MOMENTO: ¿El hábito es para "Cualquiera" O coincide con la Luz/Hora?
             boolean matchMomento = "Cualquiera".equalsIgnoreCase(h.getContextTime()) ||
                     currentMomento.equalsIgnoreCase(h.getContextTime());
-            // Solo si cumple AMBAS condiciones, entra a la lista "En Foco"
-            if (matchLugar && matchMomento) {
+
+            // Solo si cumple las condiciones, entra a la lista "En Foco"
+            if (matchLugar && matchMomento && !h.isCompleted()) {
+                // Solo si cumple AMBAS condiciones, entra a la lista "En Foco"
                 sugerencias.add(h);
             }
         }
