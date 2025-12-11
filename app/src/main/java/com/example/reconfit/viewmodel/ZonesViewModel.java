@@ -66,4 +66,7 @@ public class ZonesViewModel extends ViewModel {
     }
 
 
+    public void deleteZone(Zone zone) {
+        repository.deleteZone(zone);
+    }
 }
