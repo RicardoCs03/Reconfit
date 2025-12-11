@@ -53,11 +53,21 @@ public class HabitsFragment extends Fragment {
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 
         // 3. Inicializar el Adaptador
-        habitsAdapter = new HabitsAdapter(new ArrayList<>(), idToDelete -> {
-            // Esta es la lógica que se ejecuta cuando dicen "Sí" en el diálogo
-            habitsViewModel.deleteHabit(idToDelete);
-            Toast.makeText(getContext(), "Hábito eliminado", Toast.LENGTH_SHORT).show();
+        habitsAdapter = new HabitsAdapter(new ArrayList<>(), new HabitsAdapter.OnHabitActionListener() {
+            @Override
+            public void onDelete(String habitId) {
+                // Lógica de borrar (permitir borrar desde el Home)
+                habitsViewModel.deleteHabit(habitId);
+                Toast.makeText(getContext(), "Hábito eliminado", Toast.LENGTH_SHORT).show();
+            }
+            @Override
+            public void onToggle(String habitId, boolean isCompleted) {
+                // Solo avisamos al ViewModel que cambie el estado en Firebase.
+                habitsViewModel.updateHabitStatus(habitId, isCompleted);
+            }
+
         });
+
         recyclerView.setAdapter(habitsAdapter);
 
         // 4. Observar el LiveData

@@ -25,6 +25,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import android.content.SharedPreferences;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -211,7 +212,25 @@ public class HomeFragment extends Fragment implements SensorEventListener {
         rvSugerencias.setLayoutManager(new androidx.recyclerview.widget.LinearLayoutManager(getContext()));
 
         // Inicializar el Adaptador (Empieza vacío)
-        habitsAdapter = new HabitsAdapter(new java.util.ArrayList<>(), null);
+        habitsAdapter = new HabitsAdapter(new ArrayList<>(), new HabitsAdapter.OnHabitActionListener() {
+            @Override
+            public void onDelete(String habitId) {
+                // Lógica de borrar (permitir borrar desde el Home)
+                // homeViewModel.deleteHabit(habitId); (Si agregas ese método al VM)
+            }
+            @Override
+            public void onToggle(String habitId, boolean isCompleted) {
+                //Actualizamos en Firebase
+                homeViewModel.updateHabitStatus(habitId, isCompleted);
+                // Feedback opcional
+                if (isCompleted) {
+                    Toast.makeText(getContext(), "¡Bien hecho!", Toast.LENGTH_SHORT).show();
+                }
+                // El cambio en Firebase disparará automáticamente el listener en HomeViewModel,
+                // se recargarán los hábitos, se ejecutará filtrarHabitos() y
+                // como ahora isCompleted es true, ¡desaparecerá de la lista sola!
+            }
+        });
         rvSugerencias.setAdapter(habitsAdapter);
 
         // EL CEREBRO: Observar la lista filtrada

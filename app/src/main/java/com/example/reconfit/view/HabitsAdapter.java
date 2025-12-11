@@ -16,7 +16,7 @@ import java.util.List;
 public class HabitsAdapter extends RecyclerView.Adapter<HabitsAdapter.HabitViewHolder> {
 
     private List<Habit> habitList = new ArrayList<>();
-    private OnHabitDeleteListener deleteListener;
+    private OnHabitActionListener actionListener;
 
     // Metodo para actualizar la lista cuando el ViewModel nos mande datos nuevos
     public void setHabits(List<Habit> habits) {
@@ -25,13 +25,14 @@ public class HabitsAdapter extends RecyclerView.Adapter<HabitsAdapter.HabitViewH
     }
 
     // 2. Interfaz para comunicar el evento
-    public interface OnHabitDeleteListener {
+    public interface OnHabitActionListener {
         void onDelete(String habitId);
+        void onToggle(String habitId, boolean isCompleted);
     }
 
-    public HabitsAdapter(List<Habit> habitList, OnHabitDeleteListener listener) {
+    public HabitsAdapter(List<Habit> habitList, OnHabitActionListener listener) {
         this.habitList = habitList;
-        this.deleteListener = listener;
+        this.actionListener = listener;
     }
 
     @NonNull
@@ -47,14 +48,30 @@ public class HabitsAdapter extends RecyclerView.Adapter<HabitsAdapter.HabitViewH
         Habit habit = habitList.get(position);
         holder.bind(habit);
 
+        // Esto evita que se dispare código fantasma mientras configuramos la vista.
+        holder.cbCompleted.setOnCheckedChangeListener(null);
+        holder.cbCompleted.setOnClickListener(null);
+        //Esto ya no dispara nada porque quitamos los listeners arriba
+        holder.cbCompleted.setChecked(habit.isCompleted());
+
+        holder.cbCompleted.setOnClickListener(v -> {
+            boolean isChecked = holder.cbCompleted.isChecked();
+            if (actionListener != null) {
+                // Enviamos el cambio a la lógica
+                actionListener.onToggle(habit.getId(), isChecked);
+                // Opcional: Actualizamos el modelo local inmediatamente para evitar parpadeos
+                habit.setCompleted(isChecked);
+            }
+        });
+
         holder.itemView.setOnLongClickListener(v -> {
             new AlertDialog.Builder(v.getContext())
                     .setTitle("Eliminar Hábito")
                     .setMessage("¿Deseas borrar " + habit.getName() + "?")
                     .setPositiveButton("Sí", (dialog, which) -> {
                         // AQUÍ ES EL CAMBIO: No borras, solo "avisas"
-                        if (deleteListener != null) {
-                            deleteListener.onDelete(habit.getId());
+                        if (actionListener != null) {
+                            actionListener.onDelete(habit.getId());
                         }
                     })
                     .setNegativeButton("No", null)
