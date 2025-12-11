@@ -49,6 +49,12 @@ public class HomeFragment extends Fragment implements SensorEventListener {
     private Sensor lightSensor;
     private Sensor stepSensor;
     private boolean isSensorPresent = false;
+    // Variables para Acelerómetro (Lógica de Respaldo)
+    private Sensor accelerometer;
+    private double magnitudePrevious = 0;
+    private static final double MAGNITUDE_THRESHOLD = 13.0; // Sensibilidad (Ajústalo si cuenta mucho o poco)
+    private long lastStepTime = 0; // Para evitar contar doble (Debounce)
+    private int pasosAcumuladosAcelerometro = 0; // Contador manual
     private int ultimoValorSensor = 0;
     private HomeViewModel homeViewModel;// Variable para la manipulación del ViewModel
 
@@ -85,9 +91,6 @@ public class HomeFragment extends Fragment implements SensorEventListener {
         if (lightSensor != null && sensorManager != null) {
             sensorManager.registerListener(this, lightSensor, SensorManager.SENSOR_DELAY_NORMAL);
         }
-        if(isSensorPresent && sensorManager != null) {
-            sensorManager.registerListener(this, stepSensor, SensorManager.SENSOR_DELAY_NORMAL);
-        }
 
         // Iniciar escaneo de GPS (cada 5 segundos)
         iniciarGPS();
@@ -95,6 +98,15 @@ public class HomeFragment extends Fragment implements SensorEventListener {
         // Actualizacion inmediata (Manual)
         if (homeViewModel != null) {
             homeViewModel.actualizarMomentoPorHora();
+        }
+
+        // Registrar Sensor de Pasos (Si existe)
+        if (stepSensor != null) {
+            sensorManager.registerListener(this, stepSensor, SensorManager.SENSOR_DELAY_NORMAL);
+        }
+        // O Registrar Acelerómetro (Si no hay sensor de pasos)
+        else if (accelerometer != null) {
+            sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_NORMAL);
         }
 
         // Registrar el receptor de tiempo
@@ -157,15 +169,18 @@ public class HomeFragment extends Fragment implements SensorEventListener {
             dayNightStatusTextView.setVisibility(View.VISIBLE);//Por defecto está invisible entonces se muestra el mensaje
         }
 
-        // Verificar si existe el sensor de pasos
+        // Verificar si existe el sensor de pasos // LÓGICA DE PRIORIDAD DE SENSORES
         if(sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER) != null) {
-            // Se inicializa sensor de pasos
+            // Se inicializa sensor de pasos // Plan A: Usar el sensor dedicado (Más preciso)
             stepSensor = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER);
             isSensorPresent = true;
+            accelerometer = null; // No usamos acelerómetro
         } else {
-            // Muestra un aviso si estás en emulador o dispositivo sin sensor
-            Toast.makeText(getContext(), "Sensor de pasos no disponible", Toast.LENGTH_SHORT).show();
-            isSensorPresent = false;
+            // Plan B: Usar Acelerómetro (Matemáticas)
+            accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+            stepSensor = null;
+            isSensorPresent = false; // "False" porque no es el sensor de pasos dedicado
+            Toast.makeText(getContext(), "Usando Acelerómetro (Modo Compatibilidad)", Toast.LENGTH_SHORT).show();
         }
         // Pedir Permiso en tiempo de ejecución (Necesario para Android 10/Q +)
         if(ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACTIVITY_RECOGNITION)
@@ -212,6 +227,9 @@ public class HomeFragment extends Fragment implements SensorEventListener {
 
         // Cheat mode code (Habilitar contador de pasos al tocar en la tarjeta)
         cardPasos.setOnClickListener(v -> {
+            // Si la fecha cambió, este metodo pondrá 'pasos_extra_simulados' en 0 internamente.
+            verificarReinicioDiario();
+
             // Abrimos los SP
             SharedPreferences prefs = requireActivity().getSharedPreferences("ReconFitData", Context.MODE_PRIVATE);
 
@@ -286,7 +304,7 @@ public class HomeFragment extends Fragment implements SensorEventListener {
         locationRequest.setInterval(10000); // Actualizar cada 10 segundos
         locationRequest.setFastestInterval(5000); // O mínimo cada 5 segundos
 
-        // 2. Definir qué hacer cuando llega una nueva ubicación
+        // Definir qué hacer cuando llega una nueva ubicación
         locationCallback = new LocationCallback() {
             @Override
             public void onLocationResult(@androidx.annotation.NonNull com.google.android.gms.location.LocationResult locationResult) {
@@ -328,30 +346,13 @@ public class HomeFragment extends Fragment implements SensorEventListener {
         }
         // Sensor de pasos
         else if (event.sensor.getType() == Sensor.TYPE_STEP_COUNTER) {
-            ultimoValorSensor = (int) event.values[0];
+            verificarReinicioDiario();
+
             int totalStepsSensor = (int) event.values[0];
+            ultimoValorSensor = totalStepsSensor; // Actualizamos global
 
             // Usamos SharedPreferences para guardar el "Punto de Inicio" de forma permanente
             SharedPreferences prefs = requireActivity().getSharedPreferences("ReconFitData", Context.MODE_PRIVATE);
-
-            // Logica para reinicio diario
-            // Obtener la fecha de hoy (Ej: "20251210")
-            String fechaHoy = new SimpleDateFormat("yyyyMMdd", Locale.getDefault()).format(new Date());
-            // Obtener la última fecha guardada
-            String ultimaFechaGuardada = prefs.getString("fecha_ultimo_conteo", "");
-
-            // Si las fechas son diferentes se Reinicia todo
-            if (!ultimaFechaGuardada.equals(fechaHoy)) {
-                // Guardamos la nueva fecha
-                prefs.edit().putString("fecha_ultimo_conteo", fechaHoy).apply();
-
-                // Reiniciamos la base al valor actual del sensor
-                prefs.edit().putInt("pasos_base_dia", totalStepsSensor).apply();
-
-                // Reiniciamos los pasos simulados (la trampa) a 0
-                prefs.edit().putInt("pasos_extra_simulados", 0).apply();
-            }
-
             // Obtenemos la base (ahora actualizada si cambió el día)
             int pasosBaseGuardados = prefs.getInt("pasos_base_dia", -1);
 
@@ -359,7 +360,6 @@ public class HomeFragment extends Fragment implements SensorEventListener {
             if (pasosBaseGuardados == -1) {
                 pasosBaseGuardados = totalStepsSensor;
                 prefs.edit().putInt("pasos_base_dia", pasosBaseGuardados).apply();
-                prefs.edit().putString("fecha_ultimo_conteo", fechaHoy).apply(); // Guardamos fecha también
             }
 
             // Protección: Si se reinicia el celular, el sensor vuelve a 0 y podría dar negativos
@@ -372,26 +372,106 @@ public class HomeFragment extends Fragment implements SensorEventListener {
             // Mandamos el dato al ViewModel
             actualizarPasosTotales();
         }
+        // ACELERÓMETRO (Software - Plan B)
+        else if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
+            // Obtenemos x, y, z
+            float x = event.values[0];
+            float y = event.values[1];
+            float z = event.values[2];
+
+            // Calculamos la Magnitud del vector
+            double magnitude = Math.sqrt(x * x + y * y + z * z);
+
+            // Lógica de Detección de Pico
+            // Si el golpe supera el umbral (13.0) Y ha pasado tiempo suficiente desde el último paso
+            if (magnitude > MAGNITUDE_THRESHOLD) {
+                long currentTime = System.currentTimeMillis();
+
+                // "Debounce": Solo contar si pasaron 500ms (medio segundo) entre pasos
+                // Esto evita que cuente vibraciones
+                if (currentTime - lastStepTime > 500) {
+                    lastStepTime = currentTime;
+
+                    // Antes de sumar el paso, verificamos si ya amaneció
+                    verificarReinicioDiario();
+
+                    // ¡Paso detectado!
+                    pasosAcumuladosAcelerometro++;
+                    // Guardar y Actualizar (Reusamos tu lógica de SharedPreferences)
+                    guardarYActualizarPasosManuales();
+                }
+            }
+        }
+    }
+
+    // Metodo auxiliar para guardar pasos con ACELEROMETRO
+    private void guardarYActualizarPasosManuales() {
+        SharedPreferences prefs = requireActivity().getSharedPreferences("ReconFitData", Context.MODE_PRIVATE);
+
+        // Recuperar los pasos "reales" acumulados hoy (si ya había)
+        // Nota: Reusamos la variable 'pasos_base_dia' pero ahora la usaremos como "Pasos Acumulados Hoy"
+        // en el caso del acelerómetro, para no complicar la lógica híbrida.
+        int pasosGuardados = prefs.getInt("pasos_acelerometro_hoy", 0);
+
+        // Sumar el nuevo paso
+        int nuevosPasos = pasosGuardados + 1;
+        prefs.edit().putInt("pasos_acelerometro_hoy", nuevosPasos).apply();
+
+        // 3. Mandar a la pantalla (Sumando los simulados del cheat mode)
+        int pasosSimulados = prefs.getInt("pasos_extra_simulados", 0);
+        homeViewModel.updateSteps(nuevosPasos + pasosSimulados);
     }
 
     private void actualizarPasosTotales() {
-        // Obtener datos de SharedPreferences
         SharedPreferences prefs = requireActivity().getSharedPreferences("ReconFitData", Context.MODE_PRIVATE);
+        // Pasos Manuales/Simulados
         int pasosExtra = prefs.getInt("pasos_extra_simulados", 0);
-        int pasosBase = prefs.getInt("pasos_base_dia", -1);
+        // Pasos Acelerómetro
+        int pasosAcelerometro = prefs.getInt("pasos_acelerometro_hoy", 0);
 
-        // Obtener dato crudo del sensor (necesitas una variable global para esto)
+        // Pasos Hardware (Solo si existe el sensor)
         int pasosRealesHoy = 0;
+        int pasosBase = prefs.getInt("pasos_base_dia", -1);
         if (pasosBase != -1 && ultimoValorSensor > 0) {
             pasosRealesHoy = ultimoValorSensor - pasosBase;
             if (pasosRealesHoy < 0) pasosRealesHoy = 0;
         }
 
-        // Sumar todo
-        int totalAVisualizar = pasosRealesHoy + pasosExtra;
+        // Si estamos usando Acelerómetro, 'pasosHardware' será 0 (porque no entra al if del sensor).
+        // Si estamos usando Hardware, 'pasosAcelerometro' será 0 (porque no entra al if del acelerómetro).
+        // Es seguro sumarlos todos.
+        int totalAVisualizar = pasosRealesHoy + pasosAcelerometro + pasosExtra;
 
         // 4. Mandar al ViewModel
         homeViewModel.updateSteps(totalAVisualizar);
+    }
+
+    // Reinicio del conteo de pasos diario
+    private void verificarReinicioDiario() {
+        SharedPreferences prefs = requireActivity().getSharedPreferences("ReconFitData", Context.MODE_PRIVATE);
+
+        // Obtener fechas
+        String fechaHoy = new SimpleDateFormat("yyyyMMdd", Locale.getDefault()).format(new Date());
+        String ultimaFechaGuardada = prefs.getString("fecha_ultimo_conteo", "");
+
+        // 2. Comparar
+        if (!ultimaFechaGuardada.equals(fechaHoy)) {
+            // ¡ES UN NUEVO DÍA!
+
+            // A. Guardamos la nueva fecha
+            prefs.edit().putString("fecha_ultimo_conteo", fechaHoy).apply();
+
+            // B. Reiniciamos TODOS los contadores
+            // - Para el sensor de hardware: la base se vuelve el valor actual (se ajusta en el onSensorChanged)
+            prefs.edit().putInt("pasos_base_dia", -1).apply(); // Lo marcamos para recalcular
+
+            // - Para el acelerómetro y cheat mode: vuelven a cero absoluto
+            prefs.edit().putInt("pasos_acelerometro_hoy", 0).apply();
+            prefs.edit().putInt("pasos_extra_simulados", 0).apply();
+
+            // Feedback (Opcional)
+            Toast.makeText(getContext(), "¡Nuevo día! Contadores a cero.", Toast.LENGTH_SHORT).show();
+        }
     }
 
     private void iniciarGPS() {
