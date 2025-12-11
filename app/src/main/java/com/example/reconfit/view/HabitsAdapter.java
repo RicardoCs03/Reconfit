@@ -84,7 +84,11 @@ public class HabitsAdapter extends RecyclerView.Adapter<HabitsAdapter.HabitViewH
         void bind(Habit habit) {
             tvName.setText(habit.getName());
             tvDescription.setText(habit.getDescription());
-            tvContext.setText(habit.getContextPlace());
+            // Unimos Lugar y Momento con un punto separador
+            String lugar = habit.getContextPlace();
+            String momento = habit.getContextTime();
+            String textoCombinado = lugar + " • " + momento;
+            tvContext.setText(textoCombinado);
             cbCompleted.setChecked(habit.isCompleted());
         }
     }

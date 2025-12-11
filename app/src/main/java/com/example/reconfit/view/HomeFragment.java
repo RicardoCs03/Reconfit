@@ -16,14 +16,18 @@ import androidx.lifecycle.ViewModelProvider;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.cardview.widget.CardView;
+import androidx.recyclerview.widget.RecyclerView;
+
 import android.content.SharedPreferences;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+import com.google.android.gms.location.FusedLocationProviderClient;
 
 import com.example.reconfit.R;
 import com.example.reconfit.viewmodel.HomeViewModel;
@@ -35,7 +39,7 @@ public class HomeFragment extends Fragment implements SensorEventListener {
     //Variables/Objetos/Constantes del sensor:
     private TextView dayNightStatusTextView;
     private TextView tvPasos;
-    private android.widget.ProgressBar progressBarPasos;
+    private ProgressBar progressBarPasos;
     private CardView cardPasos;
     private SensorManager sensorManager;
     private Sensor lightSensor;
@@ -44,11 +48,9 @@ public class HomeFragment extends Fragment implements SensorEventListener {
     private int ultimoValorSensor = 0;
     private HomeViewModel homeViewModel;// Variable para la manipulación del ViewModel
 
-    // Constante: Nivel de luz (en lux) para considerar "oscuridad"
-    private static final float LIGHT_THRESHOLD = 20.0f; // Puedes ajustar este valor
-    // Constante: Rango de horas para considerar "noche" por defecto (20:00 a 07:00)
-    private static final int NIGHT_START_HOUR = 20; // 8 PM
-    private static final int NIGHT_END_HOUR = 7;    // 7 AM
+    private RecyclerView rvSugerencias;
+    private HabitsAdapter habitsAdapter;
+    private FusedLocationProviderClient fusedLocationClient;
 
     public HomeFragment() {
         // Required empty public constructor
@@ -91,6 +93,10 @@ public class HomeFragment extends Fragment implements SensorEventListener {
     public void onViewCreated(View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         homeViewModel = new ViewModelProvider(requireActivity()).get(HomeViewModel.class);
+        fusedLocationClient = com.google.android.gms.location.LocationServices.getFusedLocationProviderClient(requireActivity());
+
+        // Llamar a la ubicación real
+        obtenerUbicacionGPS();
 
         // Vincular vistas
         dayNightStatusTextView = view.findViewById(R.id.tv_day_night_status);
@@ -191,6 +197,26 @@ public class HomeFragment extends Fragment implements SensorEventListener {
         });
 
         actualizarPasosTotales();
+
+        // Vincular el RecyclerView del XML
+        rvSugerencias = view.findViewById(R.id.rv_habits_focused);
+
+        // Configurar cómo se ven los items (Lista vertical)
+        rvSugerencias.setLayoutManager(new androidx.recyclerview.widget.LinearLayoutManager(getContext()));
+
+        // Inicializar el Adaptador (Empieza vacío)
+        habitsAdapter = new HabitsAdapter(new java.util.ArrayList<>(), null);
+        rvSugerencias.setAdapter(habitsAdapter);
+
+        // EL CEREBRO: Observar la lista filtrada
+        homeViewModel.getFocusedHabits().observe(getViewLifecycleOwner(), listaFiltrada -> {
+            // Si la lista es null o está vacía, podrías mostrar un texto de "No hay sugerencias"
+            // Pero por ahora, solo actualizamos el adaptador
+            if (listaFiltrada != null) {
+                habitsAdapter.setHabits(listaFiltrada);
+                habitsAdapter.notifyDataSetChanged();
+            }
+        });
     }
 
     //Implementación de los métodos de SensorEventListener
@@ -274,5 +300,32 @@ public class HomeFragment extends Fragment implements SensorEventListener {
 
         // 4. Mandar al ViewModel
         homeViewModel.updateSteps(totalAVisualizar);
+    }
+
+    private void obtenerUbicacionGPS() {
+        // Checar permisos primero
+        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+            // Si no hay permiso, pedirlo (o no hacer nada)
+            return;
+        }
+
+        fusedLocationClient.getLastLocation()
+                .addOnSuccessListener(location -> {
+                    if (location != null) {
+                        // ¡TENEMOS COORDENADAS REALES!
+                        double lat = location.getLatitude();
+                        double lon = location.getLongitude();
+
+                        // Se las mandamos al cerebro para que calcule la distancia
+                        homeViewModel.verificarUbicacionReal(lat, lon);
+
+                        // Feedback visual (Opcional)
+                        // Toast.makeText(getContext(), "GPS: " + lat + ", " + lon, Toast.LENGTH_SHORT).show();
+                    } else {
+                        // El GPS está prendido pero no sabe dónde está (común en interiores)
+                        Toast.makeText(getContext(), "Buscando señal GPS...", Toast.LENGTH_SHORT).show();
+                    }
+                });
     }
 }
