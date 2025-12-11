@@ -92,16 +92,14 @@ public class HomeViewModel extends AndroidViewModel {
         int currentHour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
         boolean isDark = luxValue < LIGHT_THRESHOLD;
         boolean isScheduledNight = (currentHour >= NIGHT_START_HOUR || currentHour < NIGHT_END_HOUR);
-
         String statusKey;
         String nuevoMomentoDetectado;
-
         if (isDark && isScheduledNight) {
             statusKey = "NIGHT_SCHEDULED_DARK";
             nuevoMomentoDetectado = "Noche"; // Coincide con tu Spinner
         } else if (isDark && !isScheduledNight) {
             statusKey = "DARK_INTERIOR";
-            nuevoMomentoDetectado = "Noche"; // Asumimos ambiente relajado
+            nuevoMomentoDetectado = "Mañana"; // Asumimos ambiente relajado
         } else {
             statusKey = "DAYLIGHT";
             nuevoMomentoDetectado = "Mañana"; // Coincide con tu Spinner
@@ -153,10 +151,6 @@ public class HomeViewModel extends AndroidViewModel {
         }
     }
 
-    public void updateHabitStatus(String habitId, boolean isCompleted) {
-        habitRepository.updateHabitStatus(habitId, isCompleted);
-    }
-
     // --- LÓGICA MATEMÁTICA REAL (GPS) ---
     public void verificarUbicacionReal(double latActual, double lonActual) {
         String lugarDetectado = "Cualquiera"; // Si no estoy cerca de nada, soy libre
@@ -195,22 +189,18 @@ public class HomeViewModel extends AndroidViewModel {
 
         for (Habit h : allHabitsCache) {
             // Lógica de Coincidencia (Match)
-
             // A. LUGAR: ¿El hábito es para "Cualquiera" O coincide con donde estoy?
             // Usamos equalsIgnoreCase para evitar errores de mayúsculas/minúsculas
             boolean matchLugar = "Cualquiera".equalsIgnoreCase(h.getContextPlace()) ||
                     currentLugar.equalsIgnoreCase(h.getContextPlace());
-
             // B. MOMENTO: ¿El hábito es para "Cualquiera" O coincide con la Luz/Hora?
             boolean matchMomento = "Cualquiera".equalsIgnoreCase(h.getContextTime()) ||
                     currentMomento.equalsIgnoreCase(h.getContextTime());
-
-            // Solo si cumple las condiciones, entra a la lista "En Foco"
-            if (matchLugar && matchMomento && !h.isCompleted()) {
+            // Solo si cumple AMBAS condiciones, entra a la lista "En Foco"
+            if (matchLugar && matchMomento) {
                 sugerencias.add(h);
             }
         }
-
         // Publicamos la lista filtrada para que el Fragment la pinte
         focusedHabits.setValue(sugerencias);
     }
