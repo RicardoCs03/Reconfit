@@ -17,46 +17,41 @@ import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.Executors;
 
+/**
+ * Repositorio de autenticación para Firebase Authentication y Firestore.
+ */
 public class AuthRepository {
-
     private final FirebaseAuth firebaseAuth;
     private final UserRepository userRepository;
-
-    // LiveData para observar el estado del usuario autenticado
-    private final MutableLiveData<FirebaseUser> currentUserLiveData = new MutableLiveData<>();
-
+    private final MutableLiveData<FirebaseUser> currentUserLiveData = new MutableLiveData<>(); // LiveData para observar el estado del usuario autenticado
     // Constructor
     public AuthRepository() {
         this.firebaseAuth = FirebaseAuth.getInstance();
         this.userRepository = new UserRepository(); // Inicializa el repositorio de datos de Firestore
-
         // Inicializar el LiveData con el estado actual al arrancar
         currentUserLiveData.postValue(firebaseAuth.getCurrentUser());
-
         // Listener para actualizar el LiveData automáticamente cuando cambia el estado
         firebaseAuth.addAuthStateListener(firebaseAuth -> {
             currentUserLiveData.postValue(firebaseAuth.getCurrentUser());
         });
     }
 
-    // --- Métodos de Acceso ---
-
+    /**
+     * Obtiene el LiveData del usuario actual.
+     * @return LiveData<FirebaseUser> que notifica cuando cambia el estado del usuario autenticado.
+     */
     public LiveData<FirebaseUser> getCurrentUserLiveData() {
         return currentUserLiveData;
     }
 
-    // --- Lógica de Registro ---
-
     /**
      * Registra un nuevo usuario con Firebase Auth y crea su documento de perfil en Firestore.
-     *
      * @param email Email del usuario.
      * @param password Contraseña del usuario.
      * @return Task<Void> que completa cuando la autenticación Y la escritura en Firestore han terminado.
      */
     public Task<Void> register(String email, String password) {
         Log.d("AuthRepository", "Intentando Registrar con: " + email);
-        // 1. Crear el usuario en Firebase Authentication
         return firebaseAuth.createUserWithEmailAndPassword(email, password)
                 .continueWithTask(task -> {
                     if (task.isSuccessful()) {
@@ -73,8 +68,7 @@ public class AuthRepository {
                                     "Male",
                                     new Timestamp(new Date())
                             );
-
-                            // 3. Colaborar con UserRepository para crear el documento en Firestore
+                            //UserRepository para crear el documento en Firestore
                             return userRepository.createUserDocument(newUser);
                         }
                     }
@@ -85,7 +79,6 @@ public class AuthRepository {
 
     /**
      * Inicia sesión con credenciales de email y contraseña.
-     *
      * @param email Email del usuario.
      * @param password Contraseña del usuario.
      * @return Task<AuthResult> que completa cuando el inicio de sesión ha terminado.
@@ -94,12 +87,14 @@ public class AuthRepository {
         return firebaseAuth.signInWithEmailAndPassword(email, password);
     }
 
+    /**
+     * Cierra la sesión del usuario actual.
+     */
     public void logout() {
         firebaseAuth.signOut();
     }
 
     public Task<Void> updateUserProfile(String uid, Map<String, Object> profileData) {
-        // 🚨 CORRECCIÓN: Llama al método de actualización del UserRepository.
-        return userRepository.updateProfileFields(uid, profileData);
+        return userRepository.updateProfileFields(uid, profileData);// Llama al método del repositorio para actualizar los campos del perfil
     }
 }

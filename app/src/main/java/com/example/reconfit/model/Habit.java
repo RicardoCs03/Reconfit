@@ -14,12 +14,12 @@ public class Habit {
     private String id;
     private String name;
     private String description;
-    private String contextPlace; // "Casa", "Trabajo", "Cualquiera"
-    private String contextTime;  // "Mañana", "Tarde", "Noche"
+    private String contextPlace;
+    private String contextTime;
     private Timestamp createdAt;
     private int goalFrequency;
     private boolean isCompleted;
-    private String userId;//Relación con el usuario que creó el hábito
+    private String userId;
 }
 
 

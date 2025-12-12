@@ -16,47 +16,36 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 @NoArgsConstructor
-
 public class HabitRepository {
     private final FirebaseFirestore db = FirebaseFirestore.getInstance();
     private FirebaseAuth auth = FirebaseAuth.getInstance();
-    private final String COLLECTION_NAME = "habits";
 
-    /*public void addHabit(Habit habit){
-        db.collection(COLLECTION_NAME).add(habit)
-                .addOnSuccessListener(documentReference -> {
-                    habit.setId(documentReference.getId());
-                    // Manejar la respuesta
-                })
-                .addOnFailureListener(e -> {
-                    // Manejar el error
-                });
-    }*/
-
-    //TODO: Agregar el resto de métodos CRUD
 
     // Metodo para guardar un hábito en la nube
     public Task<DocumentReference> saveHabit(Habit habit) {
-        // Obtenemos el ID del usuario actual (Anónimo o Logueado)
+        // Obtenemos el ID del usuario actual
         String userId = auth.getCurrentUser() != null ? auth.getCurrentUser().getUid() : "invitado";
-
         // Referencia a la colección: users/{userId}/habits
         CollectionReference habitsRef = db.collection("users").document(userId).collection("habits");
-
         // Guardamos el objeto
         return habitsRef.add(habit);
     }
 
-    // NUEVO: Metodo para OBTENER la referencia a la lista de hábitos
+    /**
+     * Obtiene una colección de hábitos para el usuario actual.
+     * @return
+     */
     public CollectionReference getHabitsCollection() {
         String userId = auth.getCurrentUser() != null ? auth.getCurrentUser().getUid() : "invitado";
         return db.collection("users").document(userId).collection("habits");
     }
 
-    // Método para borrar físicamente el hábito
+    /**
+     * Obtiene un hábito por su ID.
+     * @param habitId
+     */
     public void deleteHabit(String habitId) {
         String userId = auth.getCurrentUser() != null ? auth.getCurrentUser().getUid() : "invitado";
-
         db.collection("users")
                 .document(userId)
                 .collection("habits")
@@ -66,7 +55,11 @@ public class HabitRepository {
                 .addOnFailureListener(e -> Log.w("HabitRepository", "Error al eliminar hábito", e));
     }
 
-    // Actualizar solo el campo "completed"
+    /**
+     * Actualiza el estado de un hábito.
+     * @param habitId
+     * @param isCompleted
+     */
     public void updateHabitStatus(String habitId, boolean isCompleted) {
         String userId = auth.getCurrentUser() != null ? auth.getCurrentUser().getUid() : "invitado";
 
@@ -78,6 +71,10 @@ public class HabitRepository {
                 .addOnFailureListener(e -> System.err.println("Error actualizando hábito"));
     }
 
+    /**
+     * Obtiene una lista de hábitos públicos.
+     * @return
+     */
     public Task<QuerySnapshot> getPublicHabits() {
         return db.collection("public_habits").get();
     }

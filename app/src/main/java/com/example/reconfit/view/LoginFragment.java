@@ -20,16 +20,11 @@ import com.example.reconfit.R;
 import com.example.reconfit.viewmodel.AuthViewModel;
 
 public class LoginFragment extends Fragment {
-
-    // Componentes de UI
     private EditText emailEditText;
     private EditText passwordEditText;
     private Button loginButton;
     private TextView registerTextView;
     private AuthViewModel authViewModel;
-
-    // ViewModel (se inicializará en la próxima fase)
-    // private AuthViewModel authViewModel;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
@@ -91,7 +86,6 @@ public class LoginFragment extends Fragment {
                 }
             }
         });
-        // Observa los mensajes de error
         authViewModel.getErrorMessage().observe(getViewLifecycleOwner(), error -> {
             if (error != null && !error.isEmpty()) {
                 loginButton.setEnabled(true); // Re-habilitar botón
