@@ -13,47 +13,66 @@ import com.example.reconfit.model.Habit;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Adaptador para HabitList.
+ */
 public class HabitsAdapter extends RecyclerView.Adapter<HabitsAdapter.HabitViewHolder> {
-
     private List<Habit> habitList = new ArrayList<>();
     private OnHabitActionListener actionListener;
 
-    // Metodo para actualizar la lista cuando el ViewModel nos mande datos nuevos
-    public void setHabits(List<Habit> habits) {
-        this.habitList = habits;
-        notifyDataSetChanged(); // Refresca la pantalla
-    }
 
-    // 2. Interfaz para comunicar el evento
-    public interface OnHabitActionListener {
-        void onDelete(String habitId);
-        void onToggle(String habitId, boolean isCompleted);
-    }
-
+    /**
+     * Constructor.
+     * @param habitList
+     * @param listener
+     */
     public HabitsAdapter(List<Habit> habitList, OnHabitActionListener listener) {
         this.habitList = habitList;
         this.actionListener = listener;
     }
 
+    /**
+     * Actualiza la lista de hábitos.
+     * @param habits
+     */
+    public void setHabits(List<Habit> habits) {
+        this.habitList = habits;
+        notifyDataSetChanged(); // Refresca la pantalla
+    }
+
+    /**
+     * Interfaz para manejar los cambios en los hábitos.
+     */
+    public interface OnHabitActionListener {
+        void onDelete(String habitId);
+        void onToggle(String habitId, boolean isCompleted);
+    }
+
+    /**
+     * Crea cada renglón.
+     * @param parent
+     * @param viewType
+     * @return
+     */
     @NonNull
     @Override
     public HabitViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        // Inflamos el diseño 'item_habit.xml' que creamos antes
         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_habit_placeholder, parent, false);
         return new HabitViewHolder(view);
     }
 
+    /**
+     * Configura cada renglón.
+     * @param holder
+     * @param position
+     */
     @Override
     public void onBindViewHolder(@NonNull HabitViewHolder holder, int position) {
         Habit habit = habitList.get(position);
         holder.bind(habit);
-
-        // Esto evita que se dispare código fantasma mientras configuramos la vista.
         holder.cbCompleted.setOnCheckedChangeListener(null);
         holder.cbCompleted.setOnClickListener(null);
-        //Esto ya no dispara nada porque quitamos los listeners arriba
         holder.cbCompleted.setChecked(habit.isCompleted());
-
         holder.cbCompleted.setOnClickListener(v -> {
             boolean isChecked = holder.cbCompleted.isChecked();
             if (actionListener != null) {
@@ -63,13 +82,11 @@ public class HabitsAdapter extends RecyclerView.Adapter<HabitsAdapter.HabitViewH
                 habit.setCompleted(isChecked);
             }
         });
-
         holder.itemView.setOnLongClickListener(v -> {
             new AlertDialog.Builder(v.getContext())
                     .setTitle("Eliminar Hábito")
                     .setMessage("¿Deseas borrar " + habit.getName() + "?")
                     .setPositiveButton("Sí", (dialog, which) -> {
-                        // AQUÍ ES EL CAMBIO: No borras, solo "avisas"
                         if (actionListener != null) {
                             actionListener.onDelete(habit.getId());
                         }
@@ -80,16 +97,26 @@ public class HabitsAdapter extends RecyclerView.Adapter<HabitsAdapter.HabitViewH
         });
     }
 
+    /**
+     * Devuelve el número de hábitos.
+     * @return
+     */
     @Override
     public int getItemCount() {
         return habitList.size();
     }
 
-    // Clase interna para manejar cada renglón
+    /**
+     * ViewHolder para un hábito.
+     */
     class HabitViewHolder extends RecyclerView.ViewHolder {
         TextView tvName, tvContext, tvDescription;
         CheckBox cbCompleted;
 
+        /**
+         * Constructor.
+         * @param itemView
+         */
         public HabitViewHolder(@NonNull View itemView) {
             super(itemView);
             tvName = itemView.findViewById(R.id.tv_habit_name);
@@ -98,6 +125,10 @@ public class HabitsAdapter extends RecyclerView.Adapter<HabitsAdapter.HabitViewH
             cbCompleted = itemView.findViewById(R.id.cb_habit_completed);
         }
 
+        /**
+         * Configura el ViewHolder.
+         * @param habit
+         */
         void bind(Habit habit) {
             tvName.setText(habit.getName());
             tvDescription.setText(habit.getDescription());

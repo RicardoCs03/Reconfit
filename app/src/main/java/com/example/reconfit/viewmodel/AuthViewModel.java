@@ -12,10 +12,7 @@ import com.google.firebase.auth.FirebaseUser;
 import java.util.HashMap;
 import java.util.Map;
 
-
-// El ViewModel es la clase que sobrevive a los cambios de configuración
 public class AuthViewModel extends ViewModel {
-
     private final AuthRepository authRepository;
 
     // LiveData para observar el estado del usuario autenticado (si hay o no)
@@ -33,32 +30,25 @@ public class AuthViewModel extends ViewModel {
         this.currentUserLiveData = authRepository.getCurrentUserLiveData();
     }
 
-    // ------------------------------------
     // Getters para la Interfaz de Usuario
-    // ------------------------------------
 
-    /** Expone el estado de autenticación de Firebase. */
+    // Expone el estado de autenticación de Firebase.
     public LiveData<FirebaseUser> getCurrentUser() {
         return currentUserLiveData;
     }
 
-    /** Expone mensajes de error específicos. */
+    // Expone mensajes de error específicos.
     public LiveData<String> getErrorMessage() {
         return errorMessage;
     }
 
-    /** Expone el resultado de éxito de la operación. */
+    // Getter para el estado de éxito de una operación
     public LiveData<Boolean> getOperationSuccess() {
         return operationSuccess;
     }
 
-    // ------------------------------------
     // Lógica de Negocio (Llamadas a Repository)
-    // ------------------------------------
 
-    /**
-     * Intenta registrar un nuevo usuario y crear su documento de perfil.
-     */
     public void signUp(String email, String password) {
         // Limpiar el estado anterior
         errorMessage.setValue(null);

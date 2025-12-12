@@ -2,8 +2,6 @@ package com.example.reconfit.model;
 
 import com.google.firebase.Timestamp;
 
-import java.util.Date;
-
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

@@ -21,17 +21,25 @@ import com.example.reconfit.model.Habit;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Fragmento para mostrar la lista de hábitos.
+ */
 public class HabitsFragment extends Fragment {
-
     private HabitsViewModel habitsViewModel;
     private RecyclerView recyclerView;
-    // Debes crear un Adaptador personalizado (HabitsAdapter)
     private HabitsAdapter habitsAdapter;
 
     public HabitsFragment() {
-        // Constructor público vacío requerido
+
     }
 
+    /**
+     * Se llama cuando se crea la vista del fragmento.
+     * @param inflater
+     * @param container
+     * @param savedInstanceState
+     * @return La vista del fragmento.
+     */
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
                              @Nullable ViewGroup container,
@@ -40,53 +48,51 @@ public class HabitsFragment extends Fragment {
         return inflater.inflate(R.layout.fragment_habits, container, false);
     }
 
+    /**
+     * Se llama cuando la vista del fragmento ha sido creada.
+     * @param view
+     * @param savedInstanceState
+     */
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-
-        // 1. Inicializar el ViewModel
-        // El ViewModelProvider asocia el ViewModel con el ciclo de vida del Fragment.
         habitsViewModel = new ViewModelProvider(this).get(HabitsViewModel.class);
-
-        // 2. Inicializar el RecyclerView (de fragment_habits.xml)
         recyclerView = view.findViewById(R.id.recycler_view_habits);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-
-        // 3. Inicializar el Adaptador
         habitsAdapter = new HabitsAdapter(new ArrayList<>(), new HabitsAdapter.OnHabitActionListener() {
+
+            /**
+             * Eliminar un hábito.
+             * @param habitId
+             */
             @Override
             public void onDelete(String habitId) {
-                // Lógica de borrar (permitir borrar desde el Home)
                 habitsViewModel.deleteHabit(habitId);
                 Toast.makeText(getContext(), "Hábito eliminado", Toast.LENGTH_SHORT).show();
             }
+
+            /**
+             * Cambiar el estado de un hábito.
+             * @param habitId
+             * @param isCompleted
+             */
             @Override
             public void onToggle(String habitId, boolean isCompleted) {
                 // Solo avisamos al ViewModel que cambie el estado en Firebase.
                 habitsViewModel.updateHabitStatus(habitId, isCompleted);
             }
-
         });
-
         recyclerView.setAdapter(habitsAdapter);
-
-        // 4. Observar el LiveData
         habitsViewModel.getHabitsList().observe(getViewLifecycleOwner(), newHabitsList -> {
-            // Este código se ejecuta CADA VEZ que la lista de hábitos cambie en el ViewModel
-
-            // Actualizar la UI:
             if (newHabitsList != null) {
-                habitsAdapter.setHabits(newHabitsList); // Metodo que crearás en el Adaptador
-                // Por ahora, solo imprime para verificar la conexión
+                habitsAdapter.setHabits(newHabitsList);
                 Log.d("HabitsFragment", "Hábitos recibidos: " + newHabitsList.size());
             }
         });
-
         // Configurar el FloatingActionButton (fab_add_habit) para añadir un hábito
         view.findViewById(R.id.fab_add_habit).setOnClickListener(v -> {
         //     Aquí podrías abrir un diálogo para pedir el nombre del nuevo hábito
             startActivity(new android.content.Intent(getActivity(), CreateHabitActivity.class));
-        //     Y luego llamar: habitsViewModel.addNewHabit(new Habit(...));
         });
     }
 }
